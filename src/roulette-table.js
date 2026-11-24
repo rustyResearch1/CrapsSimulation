@@ -2,6 +2,7 @@
 // (addPlayer, removePlayer, act, clear, snapshot), so the server treats both alike.
 
 import { randomInt, randomBytes } from 'node:crypto';
+import { houseRound } from '../shared/theory.js';
 import { WHEELS, colorOf, isWheel, checkPlace, resolve, label, totalOnTable } from '../shared/roulette.js';
 
 export const MAX_PLAYERS = 8;
@@ -10,7 +11,8 @@ const HISTORY = 30;
 const LOG = 40;
 
 export class RouletteTable {
-  constructor(code, { wheel = 'european', minInside = 1, minOutside = 5, max = 5000, buyIn = 1000, spinWheel } = {}) {
+  constructor(code, { wheel = 'european', minInside = 1, minOutside = 5, max = 5000, buyIn = 1000, spinWheel, stats = null } = {}) {
+    this.stats = stats;
     this.game = 'roulette';
     this.code = code;
     this.wheel = isWheel(wheel) ? wheel : 'european';
@@ -50,6 +52,7 @@ export class RouletteTable {
     };
     this.players.push(player);
     this.say(`${name} sat down with $${this.buyIn}`);
+    this.stats?.seated();
     this.touched = Date.now();
     return { player };
   }
@@ -119,6 +122,7 @@ export class RouletteTable {
     if (player.bank + totalOnTable(player.bets) >= this.buyIn / 2) return `Rebuy opens when you are under $${this.buyIn / 2}`;
     player.bank += this.buyIn;
     player.rebuys++;
+    this.stats?.rebuy();
     this.say(`${player.name} bought in for another $${this.buyIn}`);
     return null;
   }
@@ -131,6 +135,7 @@ export class RouletteTable {
     this.n++;
     this.spinAt = Date.now();
 
+    const house = this.stats ? houseRound('roulette', this.players.map((p) => ({ bets: p.bets })), { wheel: this.wheel }, { pocket }) : null;
     const results = {};
     for (const p of this.players) {
       if (!totalOnTable(p.bets)) { p.lastNet = 0; continue; }
@@ -144,6 +149,7 @@ export class RouletteTable {
         events: r.events.map((e) => ({ key: e.key, label: label(e.key), result: e.result, amount: e.amount })),
       };
     }
+    this.stats?.round('roulette', { wheel: this.wheel, pocket }, house);
     this.say(`${player.name} spun ${pocket} ${color}`);
     this.history.unshift({ pocket, color });
     if (this.history.length > HISTORY) this.history.length = HISTORY;

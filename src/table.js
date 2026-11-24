@@ -5,6 +5,7 @@ import { randomInt, randomBytes } from 'node:crypto';
 import {
   POINTS, checkPlace, takeDown, resolve, classify, nextPoint, isOneRoll, label, totalOnTable, parseKey,
 } from '../shared/craps.js';
+import { houseRound } from '../shared/theory.js';
 
 export const MAX_PLAYERS = 8;
 export const SHOOTER_IDLE_MS = 20_000; // after this, anyone may roll for a stalled shooter
@@ -16,7 +17,8 @@ const CALLS = {
 };
 
 export class Table {
-  constructor(code, { min = 5, max = 5000, buyIn = 1000, rollDice } = {}) {
+  constructor(code, { min = 5, max = 5000, buyIn = 1000, rollDice, stats = null } = {}) {
+    this.stats = stats;   // optional house telemetry sink
     this.game = 'craps';
     this.code = code;
     this.min = min;
@@ -58,6 +60,7 @@ export class Table {
     this.players.push(player);
     if (!this.shooter) this.giveDice(player);
     this.say(`${name} sat down with $${this.buyIn}`);
+    this.stats?.seated();
     this.touched = Date.now();
     return { player };
   }
@@ -163,6 +166,7 @@ export class Table {
     if (player.bank + totalOnTable(player.bets) >= this.buyIn / 2) return `Rebuy opens when you are under $${this.buyIn / 2}`;
     player.bank += this.buyIn;
     player.rebuys++;
+    this.stats?.rebuy();
     this.say(`${player.name} bought in for another $${this.buyIn}`);
     return null;
   }
@@ -197,6 +201,7 @@ export class Table {
     this.n++;
     this.handRolls++;
 
+    const house = this.stats ? houseRound('craps', this.players.map((p) => ({ bets: p.bets, working: p.working })), { point: before }, { d1, d2 }) : null;
     const results = {};
     for (const p of this.players) {
       p.lastOneRoll = {};
@@ -213,6 +218,7 @@ export class Table {
       }
     }
 
+    this.stats?.round('craps', { d1, d2 }, house);
     this.point = nextPoint(before, total);
     const dice = `${d1}-${d2}`;
     const hardWay = d1 === d2 && POINTS.includes(total) ? ' the hard way' : '';

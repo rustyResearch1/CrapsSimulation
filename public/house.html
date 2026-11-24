@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a1411">
+<title>The House</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/base.css">
+<link rel="stylesheet" href="/lab.css">
+<style>
+.tiles{grid-template-columns:1fr 1fr}
+@media (min-width:860px){.wrap{max-width:980px}.tiles{grid-template-columns:repeat(3,1fr)}}
+table.st.wide th:not(:first-child),table.st.wide td:not(:first-child){padding-left:10px}
+.scroll{overflow-x:auto}
+.live{font-size:11.5px;color:var(--dim);margin:0 0 10px}
+.live i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--win);margin-right:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><h1>THE HOUSE</h1><a href="/lab">Lab</a><a href="/">Tables</a></div>
+  <p class="lede">Every bet decided at the live tables, from the casino's side: what was wagered, what the house kept, and how that compares with what the maths says it should keep.</p>
+  <div id="out"></div>
+</div>
+<script src="/common.js"></script>
+<script type="module" src="/house.js"></script>
+</body>
+</html>

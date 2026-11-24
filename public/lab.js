@@ -2,6 +2,7 @@
 // Helpers ($, h, store, money, signed) come from common.js; the maths lives in /shared/sim.js.
 import { createSim, validate, placeAmount, CRAPS_PRESETS, ROULETTE_PRESETS, LIMITS } from '/shared/sim.js';
 import { WHEELS, covers, label, payout } from '/shared/roulette.js';
+import { S, txt, niceTicks, compact, placeTip, num, usd, susd, pct } from '/charts.js';
 
 const qs = new URLSearchParams(location.search);
 const saved = store.get('lab.cfg') || {};
@@ -17,10 +18,6 @@ const cfg = {
 let result = null, baseline = null, running = false, runId = 0, addCat = 'red';
 const unitName = () => (cfg.game === 'craps' ? 'roll' : 'spin');
 const save = () => store.set('lab.cfg', cfg);
-const pct = (x, d = 1) => (x * 100).toFixed(d) + '%';
-const num = (x, d = 0) => (Number.isFinite(x) ? x.toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d }) : '∞');
-const usd = (x, d = 0) => (x < 0 ? '−$' : '$') + num(Math.abs(x), d);
-const susd = (x, d = 0) => (x > 0 ? '+' : '') + usd(x, d);
 
 // ---------- setup form ----------
 function seg(options, value, onPick, cls = '') {
@@ -168,24 +165,6 @@ async function run() {
 }
 
 // ---------- charts ----------
-const NS = 'http://www.w3.org/2000/svg';
-const S = (tag, attrs, ...kids) => { const el = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs || {})) if (v != null) el.setAttribute(k, v); el.append(...kids.flat().filter(Boolean)); return el; };
-const txt = (x, y, s, attrs) => { const t = S('text', { x, y, ...attrs }); t.textContent = s; return t; };
-function niceTicks(lo, hi, count) {
-  const span = hi - lo || 1, raw = span / count, mag = 10 ** Math.floor(Math.log10(raw));
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw);
-  const out = [];
-  for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(Math.round(v * 100) / 100);
-  return out;
-}
-const compact = (v) => (Math.abs(v) >= 10000 ? (v < 0 ? '−$' : '$') + num(Math.abs(v) / 1000, Math.abs(v) % 1000 ? 1 : 0) + 'k' : usd(v));
-function placeTip(tip, box, x, y) {
-  tip.style.opacity = 1;
-  const w = tip.offsetWidth, left = Math.min(Math.max(4, x + 12), box.clientWidth - w - 4);
-  tip.style.left = (x + 12 + w > box.clientWidth ? Math.max(4, x - w - 12) : left) + 'px';
-  tip.style.top = Math.max(0, y) + 'px';
-}
-
 function fanChart(r) {
   const W = Math.max(300, $('#out').clientWidth - 30), H = 230, m = { l: 46, r: 10, t: 8, b: 26 };
   const { p5, p25, p50, p75, p95 } = r.bands, n = r.rounds;

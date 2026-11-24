@@ -13,9 +13,11 @@ import { randomInt, randomBytes } from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import { Table } from './table.js';
 import { RouletteTable } from './roulette-table.js';
+import { createStats } from './stats.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const stats = createStats(process.env.DATA_DIR || join(ROOT, 'data'));
 const JS = 'text/javascript; charset=utf-8';
 const LONG = 'public, max-age=604800';
 // Every file the client may fetch. Nothing outside this list is served.
@@ -24,6 +26,11 @@ const STATIC = {
   '/index.html': ['public/index.html', 'text/html; charset=utf-8', 'no-cache'],
   '/roulette': ['public/roulette.html', 'text/html; charset=utf-8', 'no-cache'],
   '/lab': ['public/lab.html', 'text/html; charset=utf-8', 'no-cache'],
+  '/house': ['public/house.html', 'text/html; charset=utf-8', 'no-cache'],
+  '/house.js': ['public/house.js', JS, 'no-cache'],
+  '/charts.js': ['public/charts.js', JS, 'no-cache'],
+  '/lab.css': ['public/lab.css', 'text/css; charset=utf-8', 'no-cache'],
+  '/shared/theory.js': ['shared/theory.js', JS, 'no-cache'],
   '/roll3d.js': ['public/roll3d.js', JS, 'no-cache'],
   '/common.js': ['public/common.js', JS, 'no-cache'],
   '/roulette.js': ['public/roulette.js', JS, 'no-cache'],
@@ -70,6 +77,7 @@ function newCode() {
 const server = createServer(async (req, res) => {
   const path = new URL(req.url, 'http://x').pathname;
   if (path === '/health') { res.writeHead(200).end('ok'); return; }
+  if (path === '/api/house') { res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(JSON.stringify(stats.report())); return; }
   if (STATIC[path]) return serveStatic(req, res, STATIC[path]);
   if (path === '/sse' && req.method === 'GET') return openSse(req, res);
   if (path === '/send' && req.method === 'POST') return sseSend(req, res);
@@ -133,7 +141,8 @@ function handle(conn, msg) {
   if (msg.t === 'create') {
     if (conn.table) return;
     if (tables.size >= MAX_TABLES) return send(conn, { t: 'error', msg: 'Server is full - try again later' });
-    const table = msg.game === 'roulette' ? new RouletteTable(newCode(), { wheel: msg.wheel }) : new Table(newCode());
+    const table = msg.game === 'roulette' ? new RouletteTable(newCode(), { wheel: msg.wheel, stats }) : new Table(newCode(), { stats });
+    stats.tableOpened(table.game);
     tables.set(table.code, table);
     return seat(conn, table, table.addPlayer(msg.name).player);
   }
@@ -219,4 +228,6 @@ setInterval(() => {
   }
 }, 30_000).unref();
 
-server.listen(PORT, () => console.log(`casino tables listening on :${PORT}`));
+server.listen(PORT, () => console.log(`casino tables listening on :${PORT}; telemetry in ${stats.dir}${stats.persistent ? '' : ' (not writable, in memory only)'}`));
+// Railway stops the old container with SIGTERM on every deploy: write the totals first.
+for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { stats.flush(); process.exit(0); });

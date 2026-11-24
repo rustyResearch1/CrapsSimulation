@@ -24,6 +24,8 @@ Open the page, pick a game, open a table, and share the invite link or 4-letter 
 - `public/index.html` - lobby and craps client. `public/roll3d.js` - 3D dice scene (three.js).
 - `public/roulette.html|js` - roulette client and wheel animation.
 - `public/lab.html|js` - Strategy Lab: strategy builder, charts, statistics.
+- `src/stats.js` - house telemetry store (two files in `DATA_DIR`, default `./data`; no player
+  identity). `shared/theory.js` - exact per-round expectation and variance. `/house` shows it.
 - `public/common.js`, `public/base.css` - helpers, connection and styles shared by all pages.
 
 ## Design notes
