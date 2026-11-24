@@ -21,6 +21,7 @@ const net = createNet({
       session = { code: m.code, id: m.id, token: m.token };
       store.set('craps.session', session);
     } else if (m.t === 'state') {
+      Fair.onState(m.state, send);
       if (spinning) { queued = m; return; }
       applyState(m);
     } else if (m.t === 'error') {
@@ -45,12 +46,14 @@ function applyState(m) {
       const latest = queued || m; queued = null;
       if (latest.state.lastSpin.n > seenSpin) return applyState(latest);
       state = latest.state; myId = latest.you;
+      Fair.onState(state, send);
       render();
       flash(state.lastSpin.pocket);
     });
     return;
   }
   state = m.state; myId = m.you;
+  Fair.onState(state, send);
   if (seenSpin < 0) seenSpin = ls ? ls.n : 0;
   render();
 }
@@ -336,11 +339,14 @@ function renderSheet() {
       h('div', { class: 'tog' }, h('span', null, 'Sound effects'),
         h('button', { class: 'sw' + (muted ? '' : ' on'), 'aria-label': 'Toggle sound', on: { click: () => { muted = !muted; store.set('craps.mute', muted); renderSheet(); } } })),
       h('button', { class: 'btn ghost', on: { click: () => openSheet({ type: 'log' }) } }, 'Table log & my last spin'),
+      h('button', { class: 'btn ghost', on: { click: () => openSheet({ type: 'fair' }) } }, 'Provably fair: verify the wheel'),
       h('button', { class: 'btn ghost', on: { click: () => openSheet({ type: 'guide', tab: 'bets' }) } }, 'Guide: bets, payouts & FAQ'),
       h('a', { class: 'btn ghost', href: '/lab?game=roulette&wheel=' + state.wheel, style: 'text-decoration:none;margin-top:9px' }, 'Strategy Lab: simulate a strategy'),
       h('button', { class: 'btn ghost', on: { click: () => { send({ t: 'clear' }); undo = []; closeSheet(); } } }, 'Take down all my bets'),
       h('button', { class: 'btn ghost', on: { click: () => { send({ t: 'rebuy' }); closeSheet(); } } }, `Rebuy ${money(state.buyIn)} (when under ${money(state.buyIn / 2)})`),
       h('button', { class: 'btn ghost', style: 'color:var(--lose)', on: { click: () => send({ t: 'leave' }) } }, 'Leave table')));
+  } else if (sheet.type === 'fair') {
+    wrap.append(head('Provably fair'), Fair.sheet(state, myId, send, renderSheet));
   } else if (sheet.type === 'guide') {
     const tabs = [['basics', 'The game'], ['bets', 'Bets'], ['faq', 'FAQ']];
     wrap.append(head('Roulette guide'),
@@ -370,7 +376,7 @@ function guideNode(tab) {
       'Undo takes back your last chip. Take down, then a bet, removes it.',
       `Inside bets start at ${money(state.minInside)}, outside bets at ${money(state.minOutside)}. Table maximum ${money(state.max)} per bet.`]),
     H('The wheel'),
-    P('Each result is one draw from the server\'s cryptographic random generator. Every pocket is equally likely on every spin, and no spin is affected by the ones before it.'));
+    P('Each result comes from a secret seed the server locks in before you bet, mixed with a seed from each player\'s device. Every 10 spins the seed is revealed and you can recompute the results: Menu, then Provably fair. Every pocket is equally likely on every spin.'));
   else if (tab === 'bets') g.append(
     H('Inside bets'),
     T([[h('b', null, 'Bet'), h('b', null, 'Covers'), h('b', null, 'Pays')],

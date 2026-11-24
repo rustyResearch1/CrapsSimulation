@@ -1,11 +1,12 @@
 // One craps table: seats, bankrolls, the shooter, and the hand in progress.
 // Transport-agnostic - the server feeds it actions and broadcasts snapshot().
 
-import { randomInt, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import {
   POINTS, checkPlace, takeDown, resolve, classify, nextPoint, isOneRoll, label, totalOnTable, parseKey,
 } from '../shared/craps.js';
 import { houseRound } from '../shared/theory.js';
+import { Fair } from './fair.js';
 
 export const MAX_PLAYERS = 8;
 export const SHOOTER_IDLE_MS = 20_000; // after this, anyone may roll for a stalled shooter
@@ -24,7 +25,10 @@ export class Table {
     this.min = min;
     this.max = max;
     this.buyIn = buyIn;
-    this.rollDice = rollDice || (() => [randomInt(1, 7), randomInt(1, 7)]);
+    // Dice come from a committed seed that players can verify afterwards (src/fair.js).
+    // Tests may inject fixed dice instead.
+    this.fair = rollDice ? null : new Fair('craps');
+    this.rollDice = rollDice || (() => this.fair.draw());
     this.players = [];
     this.point = 0;
     this.shooterId = null;
@@ -69,6 +73,7 @@ export class Table {
     const i = this.players.findIndex((p) => p.id === id);
     if (i < 0) return;
     const [gone] = this.players.splice(i, 1);
+    this.fair?.dropPlayer(id);
     this.say(`${gone.name} left the table`);
     if (this.shooterId === id) {
       const next = this.players.length ? this.pickNext(i - 1) : null;
@@ -119,6 +124,8 @@ export class Table {
       case 'roll': return this.roll(player);
       case 'pass': return this.pass(player);
       case 'working': player.working = !!msg.on; return null;
+      case 'seed': return this.fair ? this.fair.setSeed(player.id, msg.seed) : null;
+      case 'reveal': return !this.fair ? null : this.point !== 0 ? 'The seed can be revealed between hands, when the point is off' : this.fair.rotate();
       case 'rebuy': return this.rebuy(player);
       default: return 'Unknown action';
     }
@@ -236,6 +243,8 @@ export class Table {
     this.lastRoll = { n: this.n, d1, d2, total, kind, call, by: player.id, shooter: shooter.id, results };
 
     this.shooterAt = Date.now();
+    // Retire the seed at the end of each hand (or a long run), so it can be revealed and checked.
+    if (this.fair && (kind === 'out' || (this.point === 0 && this.fair.rolls.length >= 50))) this.fair.rotate();
     if (kind === 'out') {
       this.say(`${shooter.name} threw ${this.handRolls} roll${this.handRolls === 1 ? '' : 's'}`);
       this.passDice();
@@ -253,7 +262,7 @@ export class Table {
         connected: p.connected, rebuys: p.rebuys, lastNet: p.lastNet,
         canRepeat: Object.keys(p.lastOneRoll).length > 0,
       })),
-      history: this.history, log: this.log, lastRoll: this.lastRoll,
+      history: this.history, log: this.log, lastRoll: this.lastRoll, fair: this.fair ? this.fair.public() : null,
     };
   }
 }

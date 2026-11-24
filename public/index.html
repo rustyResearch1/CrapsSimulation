@@ -94,6 +94,7 @@
 <div id="toast"></div>
 
 <script src="/common.js"></script>
+<script src="/fair-ui.js"></script>
 <script type="module" src="/roll3d.js"></script>
 <script>
 'use strict';
@@ -135,6 +136,7 @@ function onMessage(m) {
     $('#lobby').hidden = true; $('#game').hidden = false;
     measureDock();
   } else if (m.t === 'state') {
+    Fair.onState(m.state, send);   // contribute a seed as soon as a new commitment appears, even mid-animation
     if (rolling) { queued = m; return; }
     applyState(m);
   } else if (m.t === 'error') {
@@ -162,12 +164,14 @@ function applyState(m) {
       const latest = queued || m; queued = null;
       if (latest.state.lastRoll.n > seenRoll) return applyState(latest);
       state = latest.state; myId = latest.you; stateAt = Date.now();
+      Fair.onState(state, send);
       render();
       announce(state.lastRoll);
     });
     return;
   }
   state = m.state; myId = m.you; stateAt = Date.now();
+  Fair.onState(state, send);
   if (seenRoll < 0) seenRoll = lr ? lr.n : 0;
   render();
 }
@@ -497,6 +501,7 @@ function renderSheet() {
       h('div', { class: 'tog' }, h('span', null, 'Sound effects'),
         h('button', { class: 'sw' + (muted ? '' : ' on'), 'aria-label': 'Toggle sound', on: { click: () => { muted = !muted; store.set('craps.mute', muted); renderSheet(); } } })),
       h('button', { class: 'btn ghost', on: { click: () => openSheet({ type: 'log' }) } }, 'Table log & my last roll'),
+      h('button', { class: 'btn ghost', on: { click: () => openSheet({ type: 'fair' }) } }, 'Provably fair: verify the dice'),
       h('a', { class: 'btn ghost', href: '/lab?game=craps', style: 'text-decoration:none;margin-top:9px' }, 'Strategy Lab: simulate a strategy'),
       h('button', { class: 'btn ghost', on: { click: () => openSheet({ type: 'guide', tab: 'bets' }) } }, 'Guide: bets, payouts & FAQ'),
       h('button', { class: 'btn ghost', on: { click: () => { send({ t: 'clear' }); undo = []; closeSheet(); } } }, 'Take down all my bets'),
@@ -504,6 +509,8 @@ function renderSheet() {
         h('button', { class: 'btn ghost', on: { click: () => { send({ t: 'pass' }); closeSheet(); } } }, iShoot ? 'Pass the dice' : 'Move the dice on'),
       h('button', { class: 'btn ghost', on: { click: () => { send({ t: 'rebuy' }); closeSheet(); } } }, `Rebuy ${money(state.buyIn)} (when under ${money(state.buyIn / 2)})`),
       h('button', { class: 'btn ghost', style: 'color:var(--lose)', on: { click: () => send({ t: 'leave' }) } }, 'Leave table')));
+  } else if (sheet.type === 'fair') {
+    wrap.append(head('Provably fair'), Fair.sheet(state, myId, send, renderSheet));
   } else if (sheet.type === 'guide') {
     const tabs = [['basics', 'The game'], ['bets', 'Bets'], ['pay', 'Payouts'], ['faq', 'FAQ']];
     wrap.append(head('Craps guide'),
@@ -545,7 +552,7 @@ function guideNode(tab) {
       'The shooter needs a Pass Line or Don\'t Pass bet to come out. If the shooter stalls for 20 seconds, anyone can roll for them.',
       `Everyone starts with ${money(state.buyIn)}. Table minimum ${money(state.min)}, maximum ${money(state.max)}; props take $1 chips. Rebuy from the menu when you drop under ${money(state.buyIn / 2)}.`]),
     H('The dice'),
-    P('Every roll is drawn on the server from the operating system\'s cryptographic random generator, the same class of generator licensed online casinos use. Each die is an unbiased 1 to 6, each roll is independent of the last, and no phone can see or influence a result before it lands. There are no hot or cold streaks built in, only the ones chance produces.'));
+    P('Every roll comes from a secret seed the server locks in before you bet, mixed with a seed from each player\'s device. After each hand the seed is revealed and you can recompute every roll: Menu, then Provably fair. Each die is an unbiased 1 to 6 and each roll is independent of the last. There are no hot or cold streaks built in, only the ones chance produces.'));
 
   else if (tab === 'bets') g.append(
     P(one(), 'Amber spots are decided by the very next roll, win or lose.'),

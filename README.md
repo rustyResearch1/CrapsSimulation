@@ -36,6 +36,9 @@ Open the page, pick a game, open a table, and share the invite link or 4-letter 
   ball's angle is tracked relative to the wheel so it settles in the drawn pocket.
 - Reconnect: each seat has a secret token kept in the browser; a dropped phone rejoins its seat.
   Seats are freed after 15 minutes offline; idle tables after 6 hours.
+- Provably fair: `src/fair.js` commits to a seed hash, mixes in a seed from each player's device,
+  and reveals the seed after each hand (craps) or every 10 spins (roulette). `shared/fair.js` is the
+  verifier; players run it in the browser from Menu > Provably fair, or by hand with any SHA-256 tool.
 - State is in memory. A restart clears tables.
 - The Lab runs entirely in the browser. Its statistics are tested against closed-form values
   (edge, per-spin standard deviation, N0) in `test/roulette-sim.test.js`.

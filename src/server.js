@@ -31,6 +31,8 @@ const STATIC = {
   '/charts.js': ['public/charts.js', JS, 'no-cache'],
   '/lab.css': ['public/lab.css', 'text/css; charset=utf-8', 'no-cache'],
   '/shared/theory.js': ['shared/theory.js', JS, 'no-cache'],
+  '/shared/fair.js': ['shared/fair.js', JS, 'no-cache'],
+  '/fair-ui.js': ['public/fair-ui.js', JS, 'no-cache'],
   '/roll3d.js': ['public/roll3d.js', JS, 'no-cache'],
   '/common.js': ['public/common.js', JS, 'no-cache'],
   '/roulette.js': ['public/roulette.js', JS, 'no-cache'],
@@ -78,6 +80,12 @@ const server = createServer(async (req, res) => {
   const path = new URL(req.url, 'http://x').pathname;
   if (path === '/health') { res.writeHead(200).end('ok'); return; }
   if (path === '/api/house') { res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(JSON.stringify(stats.report())); return; }
+  if (path === '/api/fair') {
+    const q = new URL(req.url, 'http://x').searchParams, table = tables.get(String(q.get('code') || '').toUpperCase());
+    const data = table && table.fair ? table.fair.epochData(Number(q.get('epoch'))) : null;
+    res.writeHead(data ? 200 : 404, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(JSON.stringify(data || { error: 'not found' }));
+    return;
+  }
   if (STATIC[path]) return serveStatic(req, res, STATIC[path]);
   if (path === '/sse' && req.method === 'GET') return openSse(req, res);
   if (path === '/send' && req.method === 'POST') return sseSend(req, res);

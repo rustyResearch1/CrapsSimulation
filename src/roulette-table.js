@@ -1,8 +1,9 @@
 // One roulette table: seats, bankrolls, and the wheel. Same interface as the craps Table
 // (addPlayer, removePlayer, act, clear, snapshot), so the server treats both alike.
 
-import { randomInt, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { houseRound } from '../shared/theory.js';
+import { Fair } from './fair.js';
 import { WHEELS, colorOf, isWheel, checkPlace, resolve, label, totalOnTable } from '../shared/roulette.js';
 
 export const MAX_PLAYERS = 8;
@@ -20,8 +21,9 @@ export class RouletteTable {
     this.minOutside = minOutside;
     this.max = max;
     this.buyIn = buyIn;
-    // Every pocket is equally likely: one unbiased draw from the OS random generator.
-    this.spinWheel = spinWheel || (() => WHEELS[this.wheel][randomInt(WHEELS[this.wheel].length)]);
+    // Pockets come from a committed seed that players can verify afterwards (src/fair.js).
+    this.fair = spinWheel ? null : new Fair(this.wheel);
+    this.spinWheel = spinWheel || (() => this.fair.draw());
     this.players = [];
     this.n = 0;
     this.history = [];
@@ -61,6 +63,7 @@ export class RouletteTable {
     const i = this.players.findIndex((p) => p.id === id);
     if (i < 0) return;
     const [gone] = this.players.splice(i, 1);
+    this.fair?.dropPlayer(id);
     this.say(`${gone.name} left the table`);
   }
 
@@ -76,6 +79,8 @@ export class RouletteTable {
       case 'repeat': return this.repeat(player);
       case 'spin': return this.spin(player);
       case 'rebuy': return this.rebuy(player);
+      case 'seed': return this.fair ? this.fair.setSeed(player.id, msg.seed) : null;
+      case 'reveal': return this.fair ? this.fair.rotate() : null;
       default: return 'Unknown action';
     }
   }
@@ -150,6 +155,7 @@ export class RouletteTable {
       };
     }
     this.stats?.round('roulette', { wheel: this.wheel, pocket }, house);
+    if (this.fair && this.fair.rolls.length >= 10) this.fair.rotate();   // retire the seed every 10 spins
     this.say(`${player.name} spun ${pocket} ${color}`);
     this.history.unshift({ pocket, color });
     if (this.history.length > HISTORY) this.history.length = HISTORY;
@@ -166,7 +172,7 @@ export class RouletteTable {
         id: p.id, name: p.name, bank: p.bank, bets: p.bets, connected: p.connected,
         rebuys: p.rebuys, lastNet: p.lastNet, canRepeat: Object.keys(p.lastBets).length > 0,
       })),
-      history: this.history, log: this.log, lastSpin: this.lastSpin,
+      history: this.history, log: this.log, lastSpin: this.lastSpin, fair: this.fair ? this.fair.public() : null,
     };
   }
 }
