@@ -112,5 +112,28 @@ await tick();
 host.send({ t: 'ping' }); await tick();
 assert(host.ws.readyState === 1, 'server survived malformed input');
 
+// Roulette: a second kind of table on the same server.
+const r1 = client('Rita'); await r1.open;
+r1.send({ t: 'create', name: 'Rita', game: 'roulette', wheel: 'american' });
+await tick();
+assert(r1.state.game === 'roulette' && r1.state.wheel === 'american', 'roulette table created');
+const r2 = client('Raj'); await r2.open;
+r2.send({ t: 'join', code: r1.code, name: 'Raj' });
+await tick();
+r1.send({ t: 'spin' }); await tick();
+assert(r1.errors.some((e) => /Place a bet/.test(e)), 'no spin without a bet');
+r1.send({ t: 'bet', key: 'red', amt: 10 }); r1.send({ t: 'bet', key: 'sp:0-00', amt: 5 }); r1.send({ t: 'bet', key: 'first4', amt: 5 });
+r2.send({ t: 'bet', key: 'black', amt: 10 }); r2.send({ t: 'bet', key: 'n:17', amt: 1 });
+await tick();
+assert(r1.errors.some((e) => /not on this wheel/.test(e)), 'single-zero bet refused on a double-zero wheel');
+r2.send({ t: 'spin' }); await tick();
+const sp = r1.state.lastSpin;
+assert(sp && sp.n === 1 && r2.state.lastSpin.pocket === sp.pocket, 'both players see the same pocket');
+const [pa, pb] = r1.state.players;
+assert(Object.keys(pa.bets).length === 0 && pa.bank === 1000 + sp.results[pa.id].net && pb.bank === 1000 + sp.results[pb.id].net, 'spin settled every bet');
+if (sp.color !== 'green') assert((sp.results[pa.id].net === 5) !== (sp.results[pb.id].net >= 9), 'red and black cannot both win');
+r1.send({ t: 'spin' }); await tick();
+assert(r1.errors.some((e) => /still spinning|Place a bet/.test(e)) && r1.state.n === 1, 'no second spin while the wheel is turning');
+
 console.log('E2E OK');
 process.exit(0);

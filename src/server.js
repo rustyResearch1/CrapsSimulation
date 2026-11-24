@@ -12,6 +12,7 @@ import { dirname, join } from 'node:path';
 import { randomInt, randomBytes } from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import { Table } from './table.js';
+import { RouletteTable } from './roulette-table.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -21,7 +22,16 @@ const LONG = 'public, max-age=604800';
 const STATIC = {
   '/': ['public/index.html', 'text/html; charset=utf-8', 'no-cache'],
   '/index.html': ['public/index.html', 'text/html; charset=utf-8', 'no-cache'],
+  '/roulette': ['public/roulette.html', 'text/html; charset=utf-8', 'no-cache'],
+  '/lab': ['public/lab.html', 'text/html; charset=utf-8', 'no-cache'],
   '/roll3d.js': ['public/roll3d.js', JS, 'no-cache'],
+  '/common.js': ['public/common.js', JS, 'no-cache'],
+  '/roulette.js': ['public/roulette.js', JS, 'no-cache'],
+  '/lab.js': ['public/lab.js', JS, 'no-cache'],
+  '/base.css': ['public/base.css', 'text/css; charset=utf-8', 'no-cache'],
+  '/shared/craps.js': ['shared/craps.js', JS, 'no-cache'],
+  '/shared/roulette.js': ['shared/roulette.js', JS, 'no-cache'],
+  '/shared/sim.js': ['shared/sim.js', JS, 'no-cache'],
   '/vendor/three.module.js': ['node_modules/three/build/three.module.js', JS, LONG],
   '/vendor/three.core.js': ['node_modules/three/build/three.core.js', JS, LONG],
 };
@@ -113,7 +123,7 @@ function seat(conn, table, player) {
   conn.playerId = player.id;
   player.connected = true;
   player.seenAt = Date.now();
-  send(conn, { t: 'joined', code: table.code, id: player.id, token: player.token });
+  send(conn, { t: 'joined', game: table.game, code: table.code, id: player.id, token: player.token });
   broadcast(table);
 }
 
@@ -123,7 +133,7 @@ function handle(conn, msg) {
   if (msg.t === 'create') {
     if (conn.table) return;
     if (tables.size >= MAX_TABLES) return send(conn, { t: 'error', msg: 'Server is full - try again later' });
-    const table = new Table(newCode());
+    const table = msg.game === 'roulette' ? new RouletteTable(newCode(), { wheel: msg.wheel }) : new Table(newCode());
     tables.set(table.code, table);
     return seat(conn, table, table.addPlayer(msg.name).player);
   }
@@ -172,8 +182,7 @@ function onClose(conn) {
   if (!player) return;
   player.connected = false;
   player.seenAt = Date.now();
-  // Don't strand the table on a shooter who vanished between hands.
-  if (table.shooterId === player.id && table.point === 0 && table.players.some((p) => p.connected)) table.passDice();
+  table.onDisconnect(player);
   broadcast(table);
 }
 
@@ -210,4 +219,4 @@ setInterval(() => {
   }
 }, 30_000).unref();
 
-server.listen(PORT, () => console.log(`craps table listening on :${PORT}`));
+server.listen(PORT, () => console.log(`casino tables listening on :${PORT}`));

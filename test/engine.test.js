@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolve, checkPlace, takeDown, nextPoint, parseKey } from '../src/engine.js';
+import { resolve, checkPlace, takeDown, nextPoint, parseKey } from '../shared/craps.js';
 import { Table } from '../src/table.js';
 
 const ctx = (point) => ({ point, min: 5, max: 5000 });

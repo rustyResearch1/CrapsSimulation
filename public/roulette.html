@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0a1411">
+<title>Roulette Table</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/base.css">
+<style>
+#last{display:flex;align-items:center;gap:12px;padding:2px 2px 8px}
+.pocket{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:700 22px Georgia,serif;color:#fff;flex:none;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.25),0 3px 8px rgba(0,0,0,.5)}
+.red{background:#b8261f}.black{background:#161616}.green{background:#12843f}
+#rhist{display:flex;gap:4px;overflow:hidden;height:24px;align-items:center;padding:0 2px 8px}
+#rhist .h{color:#fff}
+#rhist .h:first-child{outline:1px solid var(--line)}
+
+#rfelt{background:radial-gradient(120% 80% at 50% 0%,#198a61 0%,#0e6245 42%,#083f2d 100%);border:8px solid #4a2c18;border-radius:22px;padding:9px;
+  box-shadow:0 0 0 2px #1d0f07,inset 0 0 0 2px rgba(0,0,0,.4),inset 0 0 46px rgba(0,0,0,.45),0 14px 30px rgba(0,0,0,.55);margin-top:2px}
+#board{display:grid;grid-template-columns:44px 40px repeat(3,1fr);grid-template-rows:46px repeat(12,46px) 42px;user-select:none;-webkit-user-select:none}
+.cell{position:relative;border:1px solid var(--line);margin:-.5px;display:grid;place-items:center;color:#fff;font-weight:800;overflow:hidden;
+  transition:background .12s}
+.cell:active{filter:brightness(1.35)}
+.cell.num{font:700 19px Georgia,serif}
+.cell.num.red{background:#a8241d}.cell.num.black{background:#141414}
+.cell.zero{background:#12843f;font:700 20px Georgia,serif}
+.cell.out{background:rgba(0,0,0,.1);font-size:11px;letter-spacing:.06em}
+.cell.out>span:first-child{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap}
+.cell.out.cr>span:first-child{color:#ff9d95}.cell.out.cb>span:first-child{color:#d9d9d9}
+.cell.col{background:rgba(0,0,0,.1);font-size:12px}
+.cell.won{animation:rwon 2.2s ease-out}
+@keyframes rwon{0%,55%{box-shadow:inset 0 0 0 3px var(--gold),inset 0 0 22px rgba(240,199,94,.9)}100%{box-shadow:none}}
+#zeros{grid-column:3/6;grid-row:1;display:flex}
+#zeros .cell{flex:1}
+#spots{grid-column:3/6;grid-row:2/14;position:relative;pointer-events:none;z-index:2}
+.hs{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;pointer-events:auto;display:grid;place-items:center}
+.hs:before{content:"";width:9px;height:9px;border-radius:50%;background:rgba(233,217,160,.5);box-shadow:0 0 0 1px rgba(0,0,0,.45)}
+.hs.mine:before{display:none}
+.hs b{font-size:9.5px;font-weight:800;padding:2px 4px;border-radius:9px;background:var(--gold);color:#2a1c05;box-shadow:0 1px 3px rgba(0,0,0,.6);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.cell .badge{right:2px;bottom:1px;font-size:10px}
+.cell .oth{left:2px;bottom:1px;font-size:8.5px;font-weight:600}
+.cell.out .badge{right:auto;left:50%;transform:translateX(-50%);bottom:2px}
+.cell.out .badge:before{display:none}
+.hint{font-size:11px;color:#d6e7dc;text-align:center;margin:8px 0 0}
+#spin{flex:2.2;background:linear-gradient(#f6d77c,#d9a93a);color:#2a1c05;border:0;font-size:15px;letter-spacing:.04em}
+#spin:disabled{background:var(--panel-2);color:var(--dim);opacity:1;font-size:12.5px;letter-spacing:0}
+
+/* ---------- wheel ---------- */
+#spinner{position:fixed;inset:0;z-index:40;overflow:hidden;opacity:0;transition:opacity .28s;
+  background:radial-gradient(90% 60% at 50% 40%,#0b3a29,#030806)}
+#spinner.in{opacity:1}
+#wheelBox{position:absolute;left:50%;top:40%;width:min(118vw,78vh);aspect-ratio:1;transform:translate(-50%,-50%) perspective(1000px) rotateX(40deg) scale(.82);
+  transition:transform 4.4s cubic-bezier(.2,.6,.2,1);filter:drop-shadow(0 40px 30px rgba(0,0,0,.7))}
+#spinner.in #wheelBox{transform:translate(-50%,-50%) perspective(1000px) rotateX(26deg) scale(1.02)}
+#wheelBox svg{width:100%;height:100%;display:block}
+#rbanner{position:absolute;left:0;right:0;bottom:0;text-align:center;padding:60px 20px calc(34px + env(safe-area-inset-bottom));
+  background:linear-gradient(transparent,rgba(0,0,0,.82) 45%);opacity:0;transform:translateY(14px);transition:opacity .25s,transform .35s}
+#rbanner.show{opacity:1;transform:none}
+#rbanner .pocket{width:84px;height:84px;font-size:40px;margin:0 auto}
+#rbanner .cl{font-size:19px;font-weight:700;margin-top:10px}
+#rbanner .nt{font-size:22px;font-weight:800;margin-top:8px;font-variant-numeric:tabular-nums}
+#rbanner .skip{font-size:11px;color:var(--dim);margin-top:14px;letter-spacing:.1em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div id="game">
+  <header><div class="wrap">
+    <div class="hbar">
+      <div class="code"><small id="wheelName">Roulette</small><span id="code"></span></div>
+      <span class="dot off" id="conn" title="connection"></span>
+      <span class="sp"></span>
+      <button class="hbtn" id="share">Invite</button>
+      <button class="hbtn" id="guideBtn">Guide</button>
+      <button class="hbtn" id="menuBtn">Menu</button>
+    </div>
+    <div id="last">
+      <div class="pocket green" id="lastPocket">–</div>
+      <div>
+        <div id="phase" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)">Place your bets</div>
+        <div id="call" style="font-size:15px;font-weight:700;min-height:20px">Anyone can spin once a bet is down</div>
+        <div id="mine" style="font-size:13px;min-height:18px;color:var(--dim)"></div>
+      </div>
+    </div>
+    <div id="rhist"></div>
+  </div></header>
+  <div class="wrap">
+    <div id="players"></div>
+    <main id="rfelt">
+      <div id="board"></div>
+      <p class="hint">Tap a number for a straight-up bet. The dots on the lines are splits, corners, streets and six lines.</p>
+    </main>
+  </div>
+  <footer id="dock"><div class="wrap">
+    <div class="stats">
+      <span>Chips <b id="bank">$0</b></span>
+      <span>On table <b id="onTable">$0</b></span>
+      <span>Session <b id="net">$0</b></span>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="acts">
+      <button class="act" id="undo">Undo</button>
+      <button class="act" id="rem">Take down</button>
+      <button class="act" id="rep">Rebet</button>
+      <button class="act" id="spin">SPIN</button>
+    </div>
+  </div></footer>
+</div>
+
+<div id="scrim" hidden></div>
+<div id="sheet" hidden></div>
+<div id="spinner" hidden>
+  <div id="wheelBox"></div>
+  <div id="rbanner"><div class="pocket" id="bPocket"></div><div class="cl" id="bCall"></div><div class="nt" id="bNet"></div><div class="skip">tap to continue</div></div>
+</div>
+<div id="toast"></div>
+
+<script src="/common.js"></script>
+<script type="module" src="/roulette.js"></script>
+</body>
+</html>

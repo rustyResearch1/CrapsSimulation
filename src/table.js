@@ -4,7 +4,7 @@
 import { randomInt, randomBytes } from 'node:crypto';
 import {
   POINTS, checkPlace, takeDown, resolve, classify, nextPoint, isOneRoll, label, totalOnTable, parseKey,
-} from './engine.js';
+} from '../shared/craps.js';
 
 export const MAX_PLAYERS = 8;
 export const SHOOTER_IDLE_MS = 20_000; // after this, anyone may roll for a stalled shooter
@@ -17,6 +17,7 @@ const CALLS = {
 
 export class Table {
   constructor(code, { min = 5, max = 5000, buyIn = 1000, rollDice } = {}) {
+    this.game = 'craps';
     this.code = code;
     this.min = min;
     this.max = max;
@@ -70,6 +71,11 @@ export class Table {
       const next = this.players.length ? this.pickNext(i - 1) : null;
       if (next) this.giveDice(next); else this.shooterId = null;
     }
+  }
+
+  /** A player's connection dropped: don't strand the table on a shooter who vanished between hands. */
+  onDisconnect(player) {
+    if (this.shooterId === player.id && this.point === 0 && this.players.some((p) => p.connected)) this.passDice();
   }
 
   /** Next connected player after seat index `from` (wraps); falls back to anyone seated. */
@@ -233,7 +239,7 @@ export class Table {
 
   snapshot() {
     return {
-      code: this.code, min: this.min, max: this.max, buyIn: this.buyIn,
+      game: 'craps', code: this.code, min: this.min, max: this.max, buyIn: this.buyIn,
       point: this.point, n: this.n, shooterId: this.shooterId,
       shooterAt: this.shooterAt, now: Date.now(), idleMs: SHOOTER_IDLE_MS,
       players: this.players.map((p) => ({
