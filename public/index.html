@@ -331,23 +331,52 @@ const me = () => state && state.players.find((p) => p.id === myId);
 const total = (bets) => Object.values(bets).reduce((s, v) => s + v, 0);
 
 // ---------- transport ----------
+// WebSocket first; if it cannot open (some networks block it), fall back to
+// Server-Sent Events for the stream plus POSTs for actions.
+let mode = 'ws', es = null, sid = null, wsFails = 0, postQ = Promise.resolve();
+function onOpen() {
+  wsOpen = true; retry = 0; setConn();
+  if (pending) { send(pending); pending = null; }
+  else if (session) send({ t: 'join', code: session.code, id: session.id, token: session.token, name: store.get('craps.name') || '' });
+}
+function onDown() {
+  wsOpen = false; setConn();
+  if (session || pending) setTimeout(connect, Math.min(5000, 400 * 2 ** retry++));
+}
 function connect() {
+  if (mode === 'sse') return connectSse();
   if (ws && ws.readyState <= 1) return;
-  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
-  ws.onopen = () => {
-    wsOpen = true; retry = 0; setConn();
-    if (pending) { send(pending); pending = null; }
-    else if (session) send({ t: 'join', code: session.code, id: session.id, token: session.token, name: store.get('craps.name') || '' });
-  };
-  ws.onmessage = (ev) => { let m; try { m = JSON.parse(ev.data); } catch { return; } onMessage(m); };
-  ws.onclose = () => {
-    wsOpen = false; setConn();
-    if (session || pending) setTimeout(connect, Math.min(5000, 400 * 2 ** retry++));
+  let opened = false;
+  const sock = ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
+  const giveUp = setTimeout(() => { if (!opened) try { sock.close(); } catch {} }, 3500);
+  sock.onopen = () => { opened = true; clearTimeout(giveUp); wsFails = 0; onOpen(); };
+  sock.onmessage = (ev) => { let m; try { m = JSON.parse(ev.data); } catch { return; } onMessage(m); };
+  sock.onclose = () => {
+    clearTimeout(giveUp);
+    if (ws !== sock) return;
+    ws = null;
+    if (!opened && ++wsFails >= 2) mode = 'sse';
+    onDown();
   };
 }
-function send(obj) { if (wsOpen) ws.send(JSON.stringify(obj)); else toast('Reconnecting…'); }
-setInterval(() => { if (wsOpen) ws.send('{"t":"ping"}'); }, 20000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden && (session || pending)) connect(); });
+function connectSse() {
+  if (es) return;
+  const src = es = new EventSource('/sse');
+  src.onmessage = (ev) => {
+    let m; try { m = JSON.parse(ev.data); } catch { return; }
+    if (m.t === 'hello') { sid = m.sid; onOpen(); } else onMessage(m);
+  };
+  src.onerror = () => { if (es !== src) return; src.close(); es = null; sid = null; onDown(); };
+}
+function rawSend(text) {
+  if (mode === 'sse') {
+    const to = sid;
+    postQ = postQ.then(() => fetch('/send?sid=' + to, { method: 'POST', headers: { 'content-type': 'text/plain' }, body: text })).catch(() => {});
+  } else ws.send(text);
+}
+function send(obj) { if (wsOpen) rawSend(JSON.stringify(obj)); else toast('Reconnecting…'); }
+setInterval(() => { if (wsOpen) rawSend('{"t":"ping"}'); }, 20000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !wsOpen && (session || pending)) connect(); });
 function setConn() { $('#conn').classList.toggle('off', !wsOpen); }
 
 function onMessage(m) {
@@ -356,13 +385,14 @@ function onMessage(m) {
     store.set('craps.session', session);
     try { history.replaceState(null, '', '?t=' + m.code); } catch {}
     seenRoll = -1; undo = [];
+    $('#lobbyErr').textContent = '';
     $('#lobby').hidden = true; $('#game').hidden = false;
     measureDock();
   } else if (m.t === 'state') {
     if (rolling) { queued = m; return; }
     applyState(m);
   } else if (m.t === 'error') {
-    if (m.fatal) { leaveLocal(); $('#lobbyErr').textContent = m.msg; }
+    if (m.fatal) { leaveLocal(); $('#lobbyErr').style.color = ''; $('#lobbyErr').textContent = m.msg; }
     else toast(m.msg);
   } else if (m.t === 'left') leaveLocal();
 }
@@ -876,7 +906,8 @@ function enter(kind) {
     if (code.length !== 4) { $('#lobbyErr').textContent = 'Table codes are 4 letters'; return; }
     pending = { t: 'join', code, name };
   }
-  if (wsOpen) { send(pending); pending = null; } else connect();
+  if (wsOpen) { send(pending); pending = null; }
+  else { $('#lobbyErr').style.color = 'var(--dim)'; $('#lobbyErr').textContent = 'Connecting…'; connect(); }
 }
 $('#create').addEventListener('click', () => enter('create'));
 $('#lobbyForm').addEventListener('submit', (e) => { e.preventDefault(); enter('join'); });

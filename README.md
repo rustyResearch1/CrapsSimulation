@@ -16,7 +16,7 @@ Open the page, pick a name, open a table, and share the invite link or 4-letter 
 
 - `src/engine.js` - pure rules: bet validation, take-downs, roll resolution, payouts. No I/O.
 - `src/table.js`  - one table: seats (max 8), bankrolls, shooter rotation, the hand in progress.
-- `src/server.js` - HTTP + WebSocket transport, table codes, reconnects, cleanup.
+- `src/server.js` - HTTP + WebSocket transport (SSE + POST fallback), table codes, reconnects, cleanup.
 - `public/index.html` - the whole client (no build step).
 
 ## Design notes

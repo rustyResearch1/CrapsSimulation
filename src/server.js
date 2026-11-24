@@ -1,11 +1,14 @@
-// HTTP + WebSocket transport. All game truth lives in Table; this file only
-// routes messages, tracks sockets, and broadcasts snapshots.
+// HTTP + WebSocket transport, with a Server-Sent-Events fallback for networks that block
+// WebSockets. All game truth lives in Table; this file only routes messages, tracks
+// connections, and broadcasts snapshots.
+//
+// A connection (`conn`) is { send(obj), close(), table, playerId } whichever way it arrived.
 
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { randomInt } from 'node:crypto';
+import { randomInt, randomBytes } from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import { Table } from './table.js';
 
@@ -17,6 +20,8 @@ const SEAT_TTL_MS = 15 * 60 * 1000;        // free a seat after 15 minutes offli
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ'; // no I, L, O
 
 const tables = new Map();
+const conns = new Set();       // every live connection, WebSocket or SSE
+const sse = new Map();         // sid -> conn, for the fallback's POST /send
 
 function newCode() {
   for (;;) {
@@ -36,99 +41,137 @@ const server = createServer(async (req, res) => {
     } catch { res.writeHead(500).end('missing client'); }
     return;
   }
+  if (path === '/sse' && req.method === 'GET') return openSse(req, res);
+  if (path === '/send' && req.method === 'POST') return sseSend(req, res);
   res.writeHead(404).end('not found');
 });
 
+function openSse(req, res) {
+  const sid = randomBytes(16).toString('hex');
+  res.writeHead(200, {
+    'content-type': 'text/event-stream', 'cache-control': 'no-cache, no-transform',
+    connection: 'keep-alive', 'x-accel-buffering': 'no',
+  });
+  const conn = {
+    table: null, playerId: null, budget: 40, sse: res,
+    send(obj) { res.write(`data: ${JSON.stringify(obj)}\n\n`); },
+    close() { sse.delete(sid); conns.delete(conn); res.end(); },
+  };
+  sse.set(sid, conn);
+  conns.add(conn);
+  conn.send({ t: 'hello', sid });
+  req.on('close', () => { sse.delete(sid); onClose(conn); });
+}
+
+function sseSend(req, res) {
+  const conn = sse.get(new URL(req.url, 'http://x').searchParams.get('sid'));
+  if (!conn) { res.writeHead(410).end(); return; }
+  let body = '';
+  req.on('data', (chunk) => { body += chunk; if (body.length > 2048) req.destroy(); });
+  req.on('end', () => { onRaw(conn, body); res.writeHead(204).end(); });
+}
+
 const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 2048 });
 
-const send = (ws, obj) => { if (ws.readyState === 1) ws.send(JSON.stringify(obj)); };
+const send = (conn, obj) => { try { conn.send(obj); } catch {} };
 
 function broadcast(table) {
   const state = table.snapshot();
-  for (const ws of wss.clients) {
-    if (ws.table === table) send(ws, { t: 'state', you: ws.playerId, state });
+  for (const conn of conns) {
+    if (conn.table === table) send(conn, { t: 'state', you: conn.playerId, state });
   }
 }
 
-function seat(ws, table, player) {
-  // One live socket per seat: a reconnect replaces the old connection.
-  for (const other of wss.clients) {
-    if (other !== ws && other.table === table && other.playerId === player.id) {
-      other.table = null; other.playerId = null; other.close(4000, 'replaced');
+function seat(conn, table, player) {
+  // One live connection per seat: a reconnect replaces the old one.
+  for (const other of conns) {
+    if (other !== conn && other.table === table && other.playerId === player.id) {
+      other.table = null; other.playerId = null; other.close();
     }
   }
-  ws.table = table;
-  ws.playerId = player.id;
+  conn.table = table;
+  conn.playerId = player.id;
   player.connected = true;
   player.seenAt = Date.now();
-  send(ws, { t: 'joined', code: table.code, id: player.id, token: player.token });
+  send(conn, { t: 'joined', code: table.code, id: player.id, token: player.token });
   broadcast(table);
 }
 
-function handle(ws, msg) {
-  if (msg.t === 'ping') return send(ws, { t: 'pong' });
+function handle(conn, msg) {
+  if (msg.t === 'ping') return send(conn, { t: 'pong' });
 
   if (msg.t === 'create') {
-    if (ws.table) return;
-    if (tables.size >= MAX_TABLES) return send(ws, { t: 'error', msg: 'Server is full - try again later' });
+    if (conn.table) return;
+    if (tables.size >= MAX_TABLES) return send(conn, { t: 'error', msg: 'Server is full - try again later' });
     const table = new Table(newCode());
     tables.set(table.code, table);
-    return seat(ws, table, table.addPlayer(msg.name).player);
+    return seat(conn, table, table.addPlayer(msg.name).player);
   }
 
   if (msg.t === 'join') {
-    if (ws.table) return;
+    if (conn.table) return;
     const table = tables.get(String(msg.code || '').toUpperCase().trim());
-    if (!table) return send(ws, { t: 'error', msg: 'No table with that code', fatal: true });
+    if (!table) return send(conn, { t: 'error', msg: 'No table with that code', fatal: true });
     const back = msg.id && table.player(msg.id);
-    if (back && back.token === msg.token) return seat(ws, table, back);
+    if (back && back.token === msg.token) return seat(conn, table, back);
     const r = table.addPlayer(msg.name);
-    if (r.error) return send(ws, { t: 'error', msg: r.error, fatal: true });
-    return seat(ws, table, r.player);
+    if (r.error) return send(conn, { t: 'error', msg: r.error, fatal: true });
+    return seat(conn, table, r.player);
   }
 
-  const table = ws.table;
-  const player = table && table.player(ws.playerId);
-  if (!player) return send(ws, { t: 'error', msg: 'Not seated at a table', fatal: true });
+  const table = conn.table;
+  const player = table && table.player(conn.playerId);
+  if (!player) return send(conn, { t: 'error', msg: 'Not seated at a table', fatal: true });
 
   if (msg.t === 'leave') {
     table.clear(player);
     table.removePlayer(player.id);
-    ws.table = null; ws.playerId = null;
-    send(ws, { t: 'left' });
+    conn.table = null; conn.playerId = null;
+    send(conn, { t: 'left' });
     if (table.players.length === 0) tables.delete(table.code); else broadcast(table);
     return;
   }
 
   const err = table.act(player, msg);
-  if (err) send(ws, { t: 'error', msg: err });
+  if (err) send(conn, { t: 'error', msg: err });
+  broadcast(table);
+}
+
+function onRaw(conn, raw) {
+  if (--conn.budget < 0) return; // refilled every second below
+  let msg;
+  try { msg = JSON.parse(raw); } catch { return; }
+  if (!msg || typeof msg !== 'object' || typeof msg.t !== 'string') return;
+  try { handle(conn, msg); } catch (e) { console.error('handler error', e); send(conn, { t: 'error', msg: 'Server error' }); }
+}
+
+function onClose(conn) {
+  conns.delete(conn);
+  const table = conn.table;
+  const player = table && table.player(conn.playerId);
+  if (!player) return;
+  player.connected = false;
+  player.seenAt = Date.now();
+  // Don't strand the table on a shooter who vanished between hands.
+  if (table.shooterId === player.id && table.point === 0 && table.players.some((p) => p.connected)) table.passDice();
   broadcast(table);
 }
 
 wss.on('connection', (ws) => {
+  const conn = {
+    table: null, playerId: null, budget: 40,
+    send(obj) { if (ws.readyState === 1) ws.send(JSON.stringify(obj)); },
+    close() { conns.delete(conn); ws.close(4000, 'replaced'); },
+  };
+  conns.add(conn);
   ws.alive = true;
-  ws.budget = 40;
   ws.on('pong', () => { ws.alive = true; });
-  ws.on('message', (raw) => {
-    if (--ws.budget < 0) return; // refilled every second below
-    let msg;
-    try { msg = JSON.parse(raw); } catch { return; }
-    if (!msg || typeof msg !== 'object' || typeof msg.t !== 'string') return;
-    try { handle(ws, msg); } catch (e) { console.error('handler error', e); send(ws, { t: 'error', msg: 'Server error' }); }
-  });
-  ws.on('close', () => {
-    const table = ws.table;
-    const player = table && table.player(ws.playerId);
-    if (!player) return;
-    player.connected = false;
-    player.seenAt = Date.now();
-    // Don't strand the table on a shooter who vanished between hands.
-    if (table.shooterId === player.id && table.point === 0 && table.players.some((p) => p.connected)) table.passDice();
-    broadcast(table);
-  });
+  ws.on('message', (raw) => onRaw(conn, raw));
+  ws.on('close', () => onClose(conn));
 });
 
-setInterval(() => { for (const ws of wss.clients) ws.budget = 40; }, 1000).unref();
+setInterval(() => { for (const conn of conns) conn.budget = 40; }, 1000).unref();
+setInterval(() => { for (const conn of sse.values()) conn.sse.write(': keep-alive\n\n'); }, 15_000).unref();
 
 setInterval(() => {
   for (const ws of wss.clients) {
