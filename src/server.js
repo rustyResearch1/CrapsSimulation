@@ -6,6 +6,7 @@
 
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { gzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { randomInt, randomBytes } from 'node:crypto';
@@ -13,7 +14,32 @@ import { WebSocketServer } from 'ws';
 import { Table } from './table.js';
 
 const PORT = Number(process.env.PORT) || 3000;
-const PUBLIC = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const JS = 'text/javascript; charset=utf-8';
+const LONG = 'public, max-age=604800';
+// Every file the client may fetch. Nothing outside this list is served.
+const STATIC = {
+  '/': ['public/index.html', 'text/html; charset=utf-8', 'no-cache'],
+  '/index.html': ['public/index.html', 'text/html; charset=utf-8', 'no-cache'],
+  '/roll3d.js': ['public/roll3d.js', JS, 'no-cache'],
+  '/vendor/three.module.js': ['node_modules/three/build/three.module.js', JS, LONG],
+  '/vendor/three.core.js': ['node_modules/three/build/three.core.js', JS, LONG],
+};
+const fileCache = new Map(); // path -> { raw, gz }
+
+async function serveStatic(req, res, [file, type, cache]) {
+  try {
+    let hit = fileCache.get(file);
+    if (!hit) {
+      const raw = await readFile(join(ROOT, file));
+      hit = { raw, gz: gzipSync(raw) };
+      fileCache.set(file, hit);
+    }
+    const gz = /\bgzip\b/.test(req.headers['accept-encoding'] || '');
+    res.writeHead(200, { 'content-type': type, 'cache-control': cache, vary: 'accept-encoding', ...(gz ? { 'content-encoding': 'gzip' } : {}) });
+    res.end(gz ? hit.gz : hit.raw);
+  } catch { res.writeHead(500).end('missing file'); }
+}
 const MAX_TABLES = 500;
 const TABLE_TTL_MS = 6 * 60 * 60 * 1000;   // drop tables untouched for 6 hours
 const SEAT_TTL_MS = 15 * 60 * 1000;        // free a seat after 15 minutes offline
@@ -34,13 +60,7 @@ function newCode() {
 const server = createServer(async (req, res) => {
   const path = new URL(req.url, 'http://x').pathname;
   if (path === '/health') { res.writeHead(200).end('ok'); return; }
-  if (path === '/' || path === '/index.html') {
-    try {
-      const html = await readFile(join(PUBLIC, 'index.html'));
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' }).end(html);
-    } catch { res.writeHead(500).end('missing client'); }
-    return;
-  }
+  if (STATIC[path]) return serveStatic(req, res, STATIC[path]);
   if (path === '/sse' && req.method === 'GET') return openSse(req, res);
   if (path === '/send' && req.method === 'POST') return sseSend(req, res);
   res.writeHead(404).end('not found');

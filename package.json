@@ -4,10 +4,15 @@
   "private": true,
   "type": "module",
   "description": "Multiplayer Vegas-rules craps (play money) - server-authoritative WebSocket game",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node src/server.js",
     "test": "node --test"
   },
-  "dependencies": { "ws": "^8.18.0" }
+  "dependencies": {
+    "three": "^0.187.0",
+    "ws": "^8.18.0"
+  }
 }

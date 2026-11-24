@@ -216,6 +216,10 @@ header{position:sticky;top:0;z-index:5;background:rgba(10,20,17,.94);backdrop-fi
 .tabs{display:flex;gap:6px;position:sticky;top:-14px;background:var(--panel);padding:8px 0;z-index:1}
 .tabs button{flex:1;padding:8px 2px;border-radius:8px;border:1px solid #33503f;font-size:12.5px;font-weight:700}
 .tabs button.on{background:var(--gold);color:#2a1c05;border-color:var(--gold)}
+#roller.gl .cam,#roller.gl .throw{display:none}
+#roller.gl{background:#040907}
+#roller.gl .banner{top:auto;bottom:0;padding:60px 20px calc(34px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.8) 45%)}
+.tilt{transform:rotateX(-7deg) rotateY(-6deg)!important}
 @media (prefers-reduced-motion:reduce){.tbl{transition:none}}
 @media (min-width:560px){.spot .t{font-size:14px}.spot .s{font-size:11px}.spot.num .t{font-size:30px}.spot.num .t.word{font-size:24px}}
 </style>
@@ -291,6 +295,7 @@ header{position:sticky;top:0;z-index:5;background:rgba(10,20,17,.94);backdrop-fi
 </div>
 <div id="toast"></div>
 
+<script type="module" src="/roll3d.js"></script>
 <script>
 'use strict';
 const $ = (s) => document.querySelector(s);
@@ -483,34 +488,40 @@ function throwDie(el, v, dir, ms) {
     { transform: `translate3d(0,0,0) ${spin(0, 0, 0)}` },
   ], { duration: ms, easing: 'cubic-bezier(.3,.55,.45,1)', fill: 'forwards' });
 }
+let cinematic = store.get('craps.cine') !== false;
 function playRoll(lr, net) {
   return new Promise((done) => {
     const el = $('#roller'), banner = $('#banner');
-    const calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const ms = calm ? 1 : 1250;
+    const calm = !cinematic || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
     $('#rTotal').textContent = lr.total;
     $('#rCall').textContent = lr.call;
     const n = $('#rNet');
     n.textContent = net == null ? '' : net === 0 ? 'No change' : (net > 0 ? 'You win ' : 'You lose ') + money(Math.abs(net));
     n.className = 'nt ' + (net > 0 ? 'pos' : net < 0 ? 'neg' : '');
     banner.classList.remove('show');
-    el.hidden = false; void el.offsetWidth; el.classList.add('in');
-    snd.dice();
-    throwDie($('#c1'), lr.d1, -1, ms); throwDie($('#c2'), lr.d2, 1, ms + 90);
-    let finished = false;
+    el.hidden = false;
+    // Full 3D table when available; otherwise the flat stand-in. Either way the dice shown are lr.d1 / lr.d2.
+    const gl = !calm && !!window.Roll3D && window.Roll3D.play(el, lr.d1, lr.d2);
+    el.classList.toggle('gl', gl);
+    void el.offsetWidth; el.classList.add('in');
+    const ms = calm ? 1 : gl ? window.Roll3D.LAND_MS : 1250;
     const timers = [];
+    if (!calm) snd.dice();
+    if (gl) [1320, 1620, 1920].forEach((t) => timers.push(setTimeout(snd.land, t)));
+    else { throwDie($('#c1'), lr.d1, -1, ms); throwDie($('#c2'), lr.d2, 1, ms + 90); }
+    let finished = false;
     const finish = () => {
       if (finished) return; finished = true;
       timers.forEach(clearTimeout); el.removeEventListener('click', finish);
       el.classList.remove('in');
-      setTimeout(() => { el.hidden = true; done(); }, 260);
+      setTimeout(() => { el.hidden = true; if (gl && window.Roll3D) window.Roll3D.stop(); done(); }, 260);
     };
     timers.push(setTimeout(() => {
-      banner.classList.add('show'); snd.land();
+      banner.classList.add('show'); if (!gl) snd.land();
       if (net > 0) snd.win(); else if (net < 0) snd.lose();
       if (navigator.vibrate) try { navigator.vibrate(net > 0 ? [30, 40, 30] : 25); } catch {}
     }, ms + 120));
-    timers.push(setTimeout(finish, ms + (calm ? 1300 : 1750)));
+    timers.push(setTimeout(finish, ms + (calm ? 1400 : 2000)));
     el.addEventListener('click', finish);
   });
 }
@@ -753,6 +764,8 @@ function renderSheet() {
     wrap.append(head('Menu'), h('div', { class: 'menu' },
       h('div', { class: 'tog' }, h('span', null, 'My place, buy, hardway and come-odds bets work on the come-out'),
         h('button', { class: 'sw' + (p.working ? ' on' : ''), 'aria-label': 'Toggle working bets', on: { click: () => send({ t: 'working', on: !p.working }) } })),
+      h('div', { class: 'tog' }, h('span', null, 'Cinematic 3D dice roll (off = quick result)'),
+        h('button', { class: 'sw' + (cinematic ? ' on' : ''), 'aria-label': 'Toggle cinematic roll', on: { click: () => { cinematic = !cinematic; store.set('craps.cine', cinematic); renderSheet(); } } })),
       h('div', { class: 'tog' }, h('span', null, 'Sound effects'),
         h('button', { class: 'sw' + (muted ? '' : ' on'), 'aria-label': 'Toggle sound', on: { click: () => { muted = !muted; store.set('craps.mute', muted); renderSheet(); } } })),
       h('button', { class: 'btn ghost', on: { click: () => openSheet({ type: 'log' }) } }, 'Table log & my last roll'),

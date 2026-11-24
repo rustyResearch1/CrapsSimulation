@@ -17,7 +17,9 @@ Open the page, pick a name, open a table, and share the invite link or 4-letter 
 - `src/engine.js` - pure rules: bet validation, take-downs, roll resolution, payouts. No I/O.
 - `src/table.js`  - one table: seats (max 8), bankrolls, shooter rotation, the hand in progress.
 - `src/server.js` - HTTP + WebSocket transport (SSE + POST fallback), table codes, reconnects, cleanup.
-- `public/index.html` - the whole client (no build step).
+- `public/index.html` - the client (no build step).
+- `public/roll3d.js` - the 3D dice-roll scene (three.js, served from node_modules). It stages the
+  server's result: each die is scripted to land with the rolled value on top.
 
 ## Design notes
 
