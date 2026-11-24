@@ -202,7 +202,7 @@ export class Table {
       if (r.events.length) {
         results[p.id] = {
           net: r.net,
-          events: r.events.map((e) => ({ label: label(e.key), result: e.result, amount: e.amount, to: e.to })),
+          events: r.events.map((e) => ({ key: e.key, label: label(e.key), result: e.result, amount: e.amount, to: e.to })),
         };
       }
     }

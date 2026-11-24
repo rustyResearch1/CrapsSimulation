@@ -86,8 +86,8 @@ header{position:sticky;top:0;z-index:5;background:rgba(10,20,17,.94);backdrop-fi
 .h:first-child{outline:1px solid var(--line)}
 
 /* ---------- felt ---------- */
-#felt{background:linear-gradient(var(--felt),var(--felt-2));border:6px solid var(--rail);border-radius:18px;padding:8px;
-  box-shadow:inset 0 0 40px rgba(0,0,0,.35);display:grid;gap:6px}
+#felt{background:radial-gradient(120% 80% at 50% 0%,#198a61 0%,#0e6245 42%,#083f2d 100%);border:8px solid #4a2c18;border-radius:22px;padding:9px;
+  box-shadow:0 0 0 2px #1d0f07,inset 0 0 0 2px rgba(0,0,0,.4),inset 0 0 46px rgba(0,0,0,.45),0 14px 30px rgba(0,0,0,.55);display:grid;gap:6px;margin-top:2px}
 .r{display:grid;gap:6px}
 .r.nums{grid-template-columns:repeat(6,1fr)}
 .r.two{grid-template-columns:2fr 1fr}
@@ -111,6 +111,17 @@ header{position:sticky;top:0;z-index:5;background:rgba(10,20,17,.94);backdrop-fi
 .badge{position:absolute;right:3px;bottom:2px;font-size:10.5px;font-weight:800;padding:1px 5px;border-radius:9px;
   background:var(--gold);color:#2a1c05;font-variant-numeric:tabular-nums;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 .oth{position:absolute;left:4px;bottom:3px;font-size:9.5px;color:#d7e8dc;opacity:.85;font-variant-numeric:tabular-nums}
+.spot.one{border-color:#ffb655}
+.spot.one .t{color:#ffe0ad}
+.spot.won{animation:won 1.6s ease-out}
+.spot.lost{animation:lost 1.6s ease-out}
+@keyframes won{0%,45%{background:rgba(90,230,140,.5);box-shadow:0 0 16px rgba(90,230,140,.85)}100%{background:rgba(0,0,0,.08);box-shadow:none}}
+@keyframes lost{0%,45%{background:rgba(255,90,80,.45)}100%{background:rgba(0,0,0,.08)}}
+.legend{display:flex;gap:14px;justify-content:center;font-size:10.5px;color:#d6e7dc}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;border:1.5px solid var(--line);margin-right:5px;vertical-align:-1px}
+.legend i.o{border-color:#ffb655}
+.badge:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;background:var(--cc,#c9342c);border:1px dashed #fff;vertical-align:0}
+.badge.b1{--cc:#8a8a8a}.badge.b5{--cc:#c9342c}.badge.b25{--cc:#1d8a4c}.badge.b100{--cc:#1b1b1b}.badge.b500{--cc:#6a3fb0}
 .sect{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#cfe3d6;opacity:.8;text-align:center;margin:3px 0 -2px}
 
 /* ---------- dock ---------- */
@@ -153,12 +164,6 @@ header{position:sticky;top:0;z-index:5;background:rgba(10,20,17,.94);backdrop-fi
 .hop small{display:block;font-size:10px;color:var(--dim);font-weight:500}
 .list{font-size:13px;color:#d8e4dc}
 .list div{padding:6px 0;border-top:1px solid #20362d}
-.rules h3{font-size:13px;color:var(--gold);margin:16px 0 4px;text-transform:uppercase;letter-spacing:.1em}
-.rules p,.rules li{font-size:13.5px;color:#d8e4dc;margin:4px 0}
-.rules ul{padding-left:18px;margin:4px 0}
-.rules table{width:100%;border-collapse:collapse;font-size:13px}
-.rules td{padding:5px 0;border-top:1px solid #20362d}
-.rules td:last-child{text-align:right;font-weight:700;white-space:nowrap}
 .menu .btn{margin-top:9px}
 .tog{display:flex;align-items:center;gap:10px;padding:12px 0}
 .tog span{flex:1;font-size:14px}
@@ -169,6 +174,49 @@ header{position:sticky;top:0;z-index:5;background:rgba(10,20,17,.94);backdrop-fi
   background:#111c18;border:1px solid #47695b;color:var(--ink);padding:9px 14px;border-radius:10px;font-size:13.5px;font-weight:600;
   max-width:88vw;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none;opacity:0;transition:opacity .18s}
 #toast.show{opacity:1}
+/* ---------- 3D roll sequence ---------- */
+#roller{position:fixed;inset:0;z-index:40;overflow:hidden;opacity:0;transition:opacity .28s;
+  background:radial-gradient(90% 65% at 50% 42%,rgba(6,40,27,.9),rgba(0,0,0,.97))}
+#roller.in{opacity:1}
+.cam{position:absolute;inset:0;perspective:900px;perspective-origin:50% 22%}
+.tbl{position:absolute;left:50%;top:44%;width:170vmin;height:120vmin;margin:-60vmin 0 0 -85vmin;border-radius:46vmin/30vmin;
+  background:radial-gradient(70% 60% at 50% 45%,#1c9468,#0a4a34 75%,#06301f);border:3.4vmin solid #4a2c18;
+  box-shadow:inset 0 0 0 .7vmin #2a1509,inset 0 0 14vmin rgba(0,0,0,.65),0 8vmin 12vmin #000;
+  transform:rotateX(66deg) scale(.5) translateY(14%);transition:transform 1.7s cubic-bezier(.16,.7,.2,1)}
+#roller.in .tbl{transform:rotateX(50deg) scale(1.08) translateY(0)}
+.tbl:before{content:"";position:absolute;inset:9%;border:.55vmin solid rgba(233,217,160,.75);border-radius:34vmin/20vmin}
+.throw{position:absolute;left:50%;top:42%;display:flex;gap:30px;transform:translate(-50%,-50%);perspective:700px}
+.dieBox{position:relative;width:64px;height:64px}
+.dieBox:after{content:"";position:absolute;left:4px;right:-6px;bottom:-26px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);filter:blur(7px);opacity:0;transition:opacity .3s .8s}
+#roller.in .dieBox:after{opacity:1}
+.tilt{width:64px;height:64px;transform-style:preserve-3d;transform:rotateX(-26deg) rotateY(-18deg)}
+.cube{width:64px;height:64px;position:relative;transform-style:preserve-3d}
+.cube .f{position:absolute;inset:0;border-radius:11px;background:linear-gradient(145deg,#f6564e,#a51b16);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.22),inset 0 0 14px rgba(0,0,0,.25);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:9px}
+.cube .f i{width:10px;height:10px;border-radius:50%;background:#fff;place-self:center;visibility:hidden;box-shadow:inset 0 -1px 2px rgba(0,0,0,.3)}
+.cube .f i.on{visibility:visible}
+.f1{transform:translateZ(32px)}.f6{transform:rotateY(180deg) translateZ(32px)}
+.f2{transform:rotateY(90deg) translateZ(32px)}.f5{transform:rotateY(-90deg) translateZ(32px)}
+.f3{transform:rotateX(90deg) translateZ(32px)}.f4{transform:rotateX(-90deg) translateZ(32px)}
+.banner{position:absolute;left:0;right:0;top:57%;text-align:center;padding:0 20px;opacity:0;transform:scale(.7) translateY(14px);transition:opacity .25s,transform .35s cubic-bezier(.2,1.5,.4,1)}
+.banner.show{opacity:1;transform:none}
+.banner .big{font:700 84px/1 Georgia,serif;color:var(--gold);text-shadow:0 4px 24px rgba(0,0,0,.8)}
+.banner .cl{font-size:19px;font-weight:700;margin-top:6px;text-shadow:0 2px 10px #000}
+.banner .nt{font-size:22px;font-weight:800;margin-top:10px;font-variant-numeric:tabular-nums}
+.banner .skip{font-size:11px;color:var(--dim);margin-top:16px;letter-spacing:.1em;text-transform:uppercase}
+.guide h3{font-size:13px;color:var(--gold);margin:18px 0 6px;text-transform:uppercase;letter-spacing:.1em}
+.guide p,.guide li{font-size:13.5px;color:#d8e4dc;margin:5px 0}
+.guide ul{padding-left:18px;margin:4px 0}
+.guide table{width:100%;border-collapse:collapse;font-size:13px}
+.guide td{padding:6px 4px 6px 0;border-top:1px solid #20362d;vertical-align:top}
+.guide td:last-child{text-align:right;font-weight:700;white-space:nowrap;padding-right:0}
+.guide .q{font-weight:700;color:var(--ink);margin-top:12px}
+.tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.06em;padding:1px 6px;border-radius:8px;margin-right:6px;vertical-align:1px}
+.tag.o{background:#ffb655;color:#3a2203}.tag.s{background:var(--line);color:#2a2408}
+.tabs{display:flex;gap:6px;position:sticky;top:-14px;background:var(--panel);padding:8px 0;z-index:1}
+.tabs button{flex:1;padding:8px 2px;border-radius:8px;border:1px solid #33503f;font-size:12.5px;font-weight:700}
+.tabs button.on{background:var(--gold);color:#2a1c05;border-color:var(--gold)}
+@media (prefers-reduced-motion:reduce){.tbl{transition:none}}
 @media (min-width:560px){.spot .t{font-size:14px}.spot .s{font-size:11px}.spot.num .t{font-size:30px}.spot.num .t.word{font-size:24px}}
 </style>
 </head>
@@ -198,7 +246,7 @@ header{position:sticky;top:0;z-index:5;background:rgba(10,20,17,.94);backdrop-fi
       <span class="dot" id="conn" title="connection"></span>
       <span class="sp"></span>
       <button class="hbtn" id="share">Invite</button>
-      <button class="hbtn" id="logBtn">Log</button>
+      <button class="hbtn" id="guideBtn">Guide</button>
       <button class="hbtn" id="menuBtn">Menu</button>
     </div>
     <section id="stage">
@@ -233,6 +281,14 @@ header{position:sticky;top:0;z-index:5;background:rgba(10,20,17,.94);backdrop-fi
 
 <div id="scrim" hidden></div>
 <div id="sheet" hidden></div>
+<div id="roller" hidden>
+  <div class="cam"><div class="tbl"></div></div>
+  <div class="throw">
+    <div class="dieBox"><div class="tilt"><div class="cube" id="c1"></div></div></div>
+    <div class="dieBox"><div class="tilt"><div class="cube" id="c2"></div></div></div>
+  </div>
+  <div class="banner" id="banner"><div class="big" id="rTotal"></div><div class="cl" id="rCall"></div><div class="nt" id="rNet"></div><div class="skip">tap to continue</div></div>
+</div>
 <div id="toast"></div>
 
 <script>
@@ -322,19 +378,17 @@ function applyState(m) {
   const lr = m.state.lastRoll;
   const fresh = lr && seenRoll >= 0 && lr.n > seenRoll;
   if (fresh) {
-    // Tumble the dice first, then reveal the settled table.
+    // Hold the settled table back until the dice have landed.
     rolling = true; seenRoll = lr.n; undo = [];
-    $('#dice').classList.add('rolling');
-    const spin = setInterval(() => { setDie($('#d1'), 1 + Math.floor(Math.random() * 6)); setDie($('#d2'), 1 + Math.floor(Math.random() * 6)); }, 80);
-    setTimeout(() => {
-      clearInterval(spin);
-      $('#dice').classList.remove('rolling');
+    const res = lr.results[m.you];
+    playRoll(lr, res ? res.net : null).then(() => {
       rolling = false;
       const latest = queued || m; queued = null;
+      if (latest.state.lastRoll.n > seenRoll) return applyState(latest);
       state = latest.state; myId = latest.you; stateAt = Date.now();
       render();
       announce(state.lastRoll);
-    }, 750);
+    });
     return;
   }
   state = m.state; myId = m.you; stateAt = Date.now();
@@ -342,14 +396,93 @@ function applyState(m) {
   render();
 }
 
+function spotFor(key) {
+  if (SPOTS[key]) return SPOTS[key];
+  const [t, n] = key.split(':');
+  if (t === 'hop') return SPOTS.hops;
+  return SPOTS['num:' + n] || null;
+}
 function announce(lr) {
   if (!lr) return;
   const mine = lr.results[myId];
-  if (navigator.vibrate) try { navigator.vibrate(mine && mine.net > 0 ? [30, 40, 30] : 25); } catch {}
-  for (const el of document.querySelectorAll('.spot.num')) {
-    if (+el.dataset.n === lr.total) { el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit'); }
+  const flash = (el, cls) => { if (!el) return; el.classList.remove('won', 'lost', 'hit'); void el.offsetWidth; el.classList.add(cls); };
+  flash(SPOTS['num:' + lr.total], 'hit');
+  if (mine) for (const e of mine.events) if (e.result === 'win' || e.result === 'lose') flash(spotFor(e.key), e.result === 'win' ? 'won' : 'lost');
+}
+
+// ---------- sound (synthesised, no assets) ----------
+let actx = null, muted = !!store.get('craps.mute');
+function audio() {
+  if (muted) return null;
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch { return null; }
+  return actx;
+}
+function tone(a, t, f, g, len, type) {
+  const o = a.createOscillator(), v = a.createGain();
+  o.type = type || 'square'; o.frequency.value = f;
+  v.gain.setValueAtTime(g, t); v.gain.exponentialRampToValueAtTime(0.001, t + len);
+  o.connect(v).connect(a.destination); o.start(t); o.stop(t + len + 0.02);
+}
+const snd = {
+  chip() { const a = audio(); if (a) tone(a, a.currentTime, 2600, 0.05, 0.04); },
+  dice() { const a = audio(); if (!a) return; for (let i = 0; i < 10; i++) tone(a, a.currentTime + i * 0.085 + Math.random() * 0.03, 700 + Math.random() * 1600, 0.12 * (1 - i / 13), 0.045); },
+  win() { const a = audio(); if (!a) return; [660, 880, 1320].forEach((f, i) => tone(a, a.currentTime + i * 0.09, f, 0.12, 0.25, 'sine')); },
+  lose() { const a = audio(); if (!a) return; tone(a, a.currentTime, 196, 0.1, 0.3, 'triangle'); tone(a, a.currentTime + 0.12, 147, 0.1, 0.35, 'triangle'); },
+  land() { const a = audio(); if (a) tone(a, a.currentTime, 320, 0.14, 0.08, 'triangle'); },
+};
+document.addEventListener('pointerdown', audio, { once: true });
+
+// ---------- 3D roll sequence ----------
+const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+const FACE_UP = { 1: [0, 0], 2: [0, -90], 3: [-90, 0], 4: [90, 0], 5: [0, 90], 6: [0, 180] };   // cube rotation that brings each face to the camera
+function buildCube(el) {
+  for (let v = 1; v <= 6; v++) {
+    const f = h('div', { class: 'f f' + v });
+    for (let i = 0; i < 9; i++) f.append(h('i', { class: PIPS[v].includes(i) ? 'on' : '' }));
+    el.append(f);
   }
-  if (mine && mine.net !== 0) toast((mine.net > 0 ? 'You won ' : 'You lost ') + money(Math.abs(mine.net)));
+}
+function throwDie(el, v, dir, ms) {
+  const [rx, ry] = FACE_UP[v];
+  const spin = (x, y, z) => `rotateX(${rx + x}deg) rotateY(${ry + y * dir}deg) rotateZ(${z * dir}deg)`;
+  return el.animate([
+    { transform: `translate3d(${dir * 75}vw,-34vh,260px) ${spin(1080, 900, 260)}` },
+    { transform: `translate3d(${dir * 14}px,18px,0) ${spin(360, 180, 40)}`, offset: 0.58 },
+    { transform: `translate3d(${dir * -6}px,-22px,40px) ${spin(90, 50, 12)}`, offset: 0.78 },
+    { transform: `translate3d(0,6px,0) ${spin(12, 6, 2)}`, offset: 0.92 },
+    { transform: `translate3d(0,0,0) ${spin(0, 0, 0)}` },
+  ], { duration: ms, easing: 'cubic-bezier(.3,.55,.45,1)', fill: 'forwards' });
+}
+function playRoll(lr, net) {
+  return new Promise((done) => {
+    const el = $('#roller'), banner = $('#banner');
+    const calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ms = calm ? 1 : 1250;
+    $('#rTotal').textContent = lr.total;
+    $('#rCall').textContent = lr.call;
+    const n = $('#rNet');
+    n.textContent = net == null ? '' : net === 0 ? 'No change' : (net > 0 ? 'You win ' : 'You lose ') + money(Math.abs(net));
+    n.className = 'nt ' + (net > 0 ? 'pos' : net < 0 ? 'neg' : '');
+    banner.classList.remove('show');
+    el.hidden = false; void el.offsetWidth; el.classList.add('in');
+    snd.dice();
+    throwDie($('#c1'), lr.d1, -1, ms); throwDie($('#c2'), lr.d2, 1, ms + 90);
+    let finished = false;
+    const timers = [];
+    const finish = () => {
+      if (finished) return; finished = true;
+      timers.forEach(clearTimeout); el.removeEventListener('click', finish);
+      el.classList.remove('in');
+      setTimeout(() => { el.hidden = true; done(); }, 260);
+    };
+    timers.push(setTimeout(() => {
+      banner.classList.add('show'); snd.land();
+      if (net > 0) snd.win(); else if (net < 0) snd.lose();
+      if (navigator.vibrate) try { navigator.vibrate(net > 0 ? [30, 40, 30] : 25); } catch {}
+    }, ms + 120));
+    timers.push(setTimeout(finish, ms + (calm ? 1300 : 1750)));
+    el.addEventListener('click', finish);
+  });
 }
 
 // ---------- felt ----------
@@ -373,19 +506,20 @@ function buildFelt() {
   felt.append(
     nums,
     h('div', { class: 'r two' }, spot('come', 'COME', '7 · 11 win · then travels', 'line'), spot('dc', "DON'T COME", 'bar 12', 'line')),
-    h('div', { class: 'r' }, spot('field', 'FIELD', '3 · 4 · 9 · 10 · 11   —   2 pays double · 12 pays triple', 'line')),
+    h('div', { class: 'r' }, spot('field', 'FIELD', '3 · 4 · 9 · 10 · 11   —   2 pays double · 12 pays triple', 'line one')),
     h('div', { class: 'r two' }, spot('dp', "DON'T PASS", 'bar 12', 'line'), spot('dpOdds', 'LAY ODDS', 'true odds', 'line')),
     h('div', { class: 'r two' }, spot('pass', 'PASS LINE', 'pays even money', 'line'), spot('passOdds', 'ODDS', '3x · 4x · 5x', 'line')),
     h('div', { class: 'sect' }, 'Proposition bets'),
+    h('div', { class: 'legend' }, h('span', null, h('i', { class: 'o' }), 'one roll only'), h('span', null, h('i'), 'stays up until it wins or loses')),
     h('div', { class: 'r four' }, spot('hard:4', 'HARD 4', '2·2 pays 7:1', 'prop'), spot('hard:6', 'HARD 6', '3·3 pays 9:1', 'prop'),
       spot('hard:8', 'HARD 8', '4·4 pays 9:1', 'prop'), spot('hard:10', 'HARD 10', '5·5 pays 7:1', 'prop')),
-    h('div', { class: 'r four' }, spot('any7', 'ANY 7', '4:1', 'prop'), spot('anyCraps', 'ANY CRAPS', '7:1', 'prop'),
+    h('div', { class: 'r four' }, spot('any7', 'ANY 7', '4:1', 'prop one'), spot('anyCraps', 'ANY CRAPS', '7:1', 'prop one'),
       spot('big6', 'BIG 6', '1:1', 'prop'), spot('big8', 'BIG 8', '1:1', 'prop')),
-    h('div', { class: 'r four' }, spot('two', 'ACES 2', '30:1', 'prop'), spot('three', 'ACE-DEUCE 3', '15:1', 'prop'),
-      spot('eleven', 'YO 11', '15:1', 'prop'), spot('twelve', 'BOXCARS 12', '30:1', 'prop')),
-    h('div', { class: 'r four' }, spot('horn', 'HORN', '2·3·11·12', 'prop'), spot('ce', 'C & E', 'craps · eleven', 'prop'),
-      spot('world', 'WORLD', 'horn + any 7', 'prop'),
-      (() => { const el = h('button', { class: 'spot prop', on: { click: () => openSheet({ type: 'hops' }) } },
+    h('div', { class: 'r four' }, spot('two', 'ACES 2', '30:1', 'prop one'), spot('three', 'ACE-DEUCE 3', '15:1', 'prop one'),
+      spot('eleven', 'YO 11', '15:1', 'prop one'), spot('twelve', 'BOXCARS 12', '30:1', 'prop one')),
+    h('div', { class: 'r four' }, spot('horn', 'HORN', '2·3·11·12', 'prop one'), spot('ce', 'C & E', 'craps · eleven', 'prop one'),
+      spot('world', 'WORLD', 'horn + any 7', 'prop one'),
+      (() => { const el = h('button', { class: 'spot prop one', on: { click: () => openSheet({ type: 'hops' }) } },
         h('span', { class: 't' }, 'HOPS'), h('span', { class: 's' }, 'exact dice'), h('span', { class: 'badge', hidden: '' }), h('span', { class: 'oth' }));
         SPOTS.hops = el; return el; })()),
   );
@@ -405,6 +539,7 @@ function place(key) {
   const p = me(); if (!p) return;
   if (chip > p.bank) return toast('Not enough chips');
   send({ t: 'bet', key, amt: chip });
+  snd.chip();
   undo.push({ key, amt: chip, n: state.n });
 }
 
@@ -417,7 +552,8 @@ function setDie(el, v) {
 
 function setBadge(el, mine, others, count) {
   const b = el.querySelector('.badge'), o = el.querySelector('.oth');
-  b.hidden = !mine; if (mine) b.textContent = money(mine);
+  b.hidden = !mine;
+  if (mine) { b.textContent = money(mine); b.className = 'badge b' + (mine >= 500 ? 500 : mine >= 100 ? 100 : mine >= 25 ? 25 : mine >= 5 ? 5 : 1); }
   o.textContent = others ? `${count}× ${money(others)}` : '';
 }
 
@@ -587,14 +723,20 @@ function renderSheet() {
     wrap.append(head('Menu'), h('div', { class: 'menu' },
       h('div', { class: 'tog' }, h('span', null, 'My place, buy, hardway and come-odds bets work on the come-out'),
         h('button', { class: 'sw' + (p.working ? ' on' : ''), 'aria-label': 'Toggle working bets', on: { click: () => send({ t: 'working', on: !p.working }) } })),
-      h('button', { class: 'btn ghost', on: { click: () => openSheet({ type: 'rules' }) } }, 'Rules & payouts'),
+      h('div', { class: 'tog' }, h('span', null, 'Sound effects'),
+        h('button', { class: 'sw' + (muted ? '' : ' on'), 'aria-label': 'Toggle sound', on: { click: () => { muted = !muted; store.set('craps.mute', muted); renderSheet(); } } })),
+      h('button', { class: 'btn ghost', on: { click: () => openSheet({ type: 'log' }) } }, 'Table log & my last roll'),
+      h('button', { class: 'btn ghost', on: { click: () => openSheet({ type: 'guide', tab: 'bets' }) } }, 'Guide: bets, payouts & FAQ'),
       h('button', { class: 'btn ghost', on: { click: () => { send({ t: 'clear' }); undo = []; closeSheet(); } } }, 'Take down all my bets'),
       (iShoot || stalled()) && state.point === 0 && state.players.length > 1 &&
         h('button', { class: 'btn ghost', on: { click: () => { send({ t: 'pass' }); closeSheet(); } } }, iShoot ? 'Pass the dice' : 'Move the dice on'),
       h('button', { class: 'btn ghost', on: { click: () => { send({ t: 'rebuy' }); closeSheet(); } } }, `Rebuy ${money(state.buyIn)} (when under ${money(state.buyIn / 2)})`),
       h('button', { class: 'btn ghost', style: 'color:var(--lose)', on: { click: () => send({ t: 'leave' }) } }, 'Leave table')));
-  } else if (sheet.type === 'rules') {
-    wrap.append(head('Rules & payouts'), rulesNode());
+  } else if (sheet.type === 'guide') {
+    const tabs = [['basics', 'The game'], ['bets', 'Bets'], ['pay', 'Payouts'], ['faq', 'FAQ']];
+    wrap.append(head('Craps guide'),
+      h('div', { class: 'tabs' }, tabs.map(([id, name]) => h('button', { class: sheet.tab === id ? 'on' : '', on: { click: () => { sheet.tab = id; renderSheet(); $('#sheet').scrollTop = 0; } } }, name))),
+      guideNode(sheet.tab));
   }
   el.replaceChildren(wrap);
 }
@@ -608,30 +750,85 @@ function betName(k) {
   return n ? `${N} ${n}` : N;
 }
 
-function rulesNode() {
-  const T = (rows) => h('table', null, rows.map(([a, b]) => h('tr', null, h('td', null, a), h('td', null, b))));
-  return h('div', { class: 'rules' },
-    h('h3', null, 'The hand'),
-    h('ul', null,
-      h('li', null, 'Come-out roll: 7 or 11 wins the Pass Line, 2, 3 or 12 loses it. Anything else becomes the point.'),
-      h('li', null, 'With a point on, the shooter rolls until the point repeats (Pass wins) or a 7 shows (seven out — the dice move to the next player).'),
-      h('li', null, "The shooter needs a Pass or Don't Pass bet to come out. If the shooter stalls for 20 seconds, anyone can roll for them.")),
-    h('h3', null, 'Line and come bets'),
-    T([['Pass Line / Come', '1:1'], ["Don't Pass / Don't Come (12 pushes)", '1:1'], ['Odds on 4 or 10 (max 3x)', '2:1'], ['Odds on 5 or 9 (max 4x)', '3:2'],
-      ['Odds on 6 or 8 (max 5x)', '6:5'], ['Lay odds (max 6x)', '1:2 · 2:3 · 5:6']]),
-    h('h3', null, 'Numbers'),
-    T([['Place 4 / 10', '9:5'], ['Place 5 / 9', '7:5'], ['Place 6 / 8', '7:6'], ['Buy (5% commission on wins)', 'true odds'],
-      ['Lay (5% commission on wins)', 'true odds'], ['Big 6 / Big 8', '1:1']]),
-    h('h3', null, 'Field and props'),
-    T([['Field 3, 4, 9, 10, 11', '1:1'], ['Field 2', '2:1'], ['Field 12', '3:1'], ['Hard 4 / Hard 10', '7:1'], ['Hard 6 / Hard 8', '9:1'],
-      ['Any Seven', '4:1'], ['Any Craps', '7:1'], ['Aces (2) / Boxcars (12)', '30:1'], ['Ace-Deuce (3) / Yo (11)', '15:1'],
-      ['Hop, pair', '30:1'], ['Hop, two numbers', '15:1'], ['Horn', 'bet in $4s'], ['C & E', 'bet in $2s'], ['World', 'bet in $5s']]),
-    h('h3', null, 'House rules at this table'),
-    h('ul', null,
-      h('li', null, `Table minimum ${money(state.min)}, maximum ${money(state.max)}. Props take $1 chips.`),
-      h('li', null, 'Place, Buy, Hardway bets and Come odds are off on the come-out unless you switch them on in the menu.'),
-      h('li', null, 'Pass Line and Come bets on a number are contract bets and cannot be taken down. Everything else can.'),
-      h('li', null, 'Payouts round down to the whole dollar, so size bets to the payout (6s and 8s in $6 units).')));
+function guideNode(tab) {
+  const T = (rows) => h('table', null, rows.map((r) => h('tr', null, r.map((c) => h('td', null, c)))));
+  const P = (...t) => h('p', null, ...t);
+  const H = (t) => h('h3', null, t);
+  const UL = (items) => h('ul', null, items.map((t) => h('li', null, t)));
+  const one = () => h('span', { class: 'tag o' }, '1 ROLL'), stay = () => h('span', { class: 'tag s' }, 'STAYS');
+  const Q = (q, a) => [h('p', { class: 'q' }, q), P(a)];
+  const g = h('div', { class: 'guide' });
+
+  if (tab === 'basics') g.append(
+    H('How a hand works'),
+    UL(['One player is the shooter (gold outline, 🎲). Everyone bets on the same dice.',
+      'The first roll of a hand is the come-out. 7 or 11 is a natural: Pass Line wins. 2, 3 or 12 is craps: Pass Line loses. The shooter keeps the dice either way.',
+      'Any other total (4, 5, 6, 8, 9, 10) becomes the point, and the ON puck moves to that number.',
+      'The shooter now rolls until the point repeats (Pass wins, new come-out, same shooter) or a 7 shows (seven out: Pass loses and the dice move to the next player).']),
+    H('Playing at this table'),
+    UL(['Pick a chip at the bottom, then tap a spot to bet. Tap again to add more.',
+      'Tap a number box (4 to 10) to Place, Buy or Lay it, or to add odds to a Come bet sitting there.',
+      'Undo takes back your last chip. Take down, then a spot, removes that whole bet. Repeat re-bets last roll\'s one-roll bets.',
+      'The small "2× $30" on a spot is what other players have there. Tap a player at the top to see all their bets.',
+      'The shooter needs a Pass Line or Don\'t Pass bet to come out. If the shooter stalls for 20 seconds, anyone can roll for them.',
+      `Everyone starts with ${money(state.buyIn)}. Table minimum ${money(state.min)}, maximum ${money(state.max)}; props take $1 chips. Rebuy from the menu when you drop under ${money(state.buyIn / 2)}.`]),
+    H('The dice'),
+    P('Every roll is drawn on the server from the operating system\'s cryptographic random generator, the same class of generator licensed online casinos use. Each die is an unbiased 1 to 6, each roll is independent of the last, and no phone can see or influence a result before it lands. There are no hot or cold streaks built in, only the ones chance produces.'));
+
+  else if (tab === 'bets') g.append(
+    P(one(), 'Amber spots are decided by the very next roll, win or lose.'),
+    P(stay(), 'White spots stay on the table over many rolls until they win or lose.'),
+    H('Line bets'),
+    T([[h('b', null, 'Pass Line'), stay()], ['Bet before the come-out. Wins on 7 or 11, loses on 2, 3, 12. After a point: wins if the point repeats, loses on 7. Locked in once the point is set.', ''],
+      [h('b', null, "Don't Pass"), stay()], ['The opposite of Pass. Come-out: wins on 2 or 3, loses on 7 or 11, 12 is a push. After a point: wins on 7, loses if the point repeats. Can be taken down.', ''],
+      [h('b', null, 'Odds'), stay()], ['Extra bet behind your line bet once a point is on. Paid at true odds, so the house has no edge on it. Up to 3x on 4/10, 4x on 5/9, 5x on 6/8. Behind Don\'t Pass you lay odds (up to 6x) instead.', '']]),
+    H('Come bets'),
+    T([[h('b', null, 'Come'), stay()], ['A Pass Line bet you can make any time a point is on. Its first roll is its own come-out: 7 or 11 wins, 2, 3, 12 loses. Any other number and the bet travels to that box, then wins if that number repeats before a 7. Locked in once it travels. You can add odds from the number box.', ''],
+      [h('b', null, "Don't Come"), stay()], ['The opposite: first roll wins on 2 or 3, loses on 7 or 11, pushes on 12. Then it travels behind a number and wins if 7 comes before that number.', '']]),
+    H('Number bets'),
+    T([[h('b', null, 'Place'), stay()], ['Bet a number directly. Wins each time it rolls, loses on 7. The bet stays up after a win. Bet 6 and 8 in $6 units, the rest in $5 units.', ''],
+      [h('b', null, 'Buy'), stay()], ['Like Place but paid at true odds, with a 5% commission taken from each win. Best on 4 and 10.', ''],
+      [h('b', null, 'Lay'), stay()], ['Bet against a number: wins on 7, loses if the number rolls. Paid at true odds less 5% of the win.', ''],
+      [h('b', null, 'Big 6 / Big 8'), stay()], ['Even money that 6 (or 8) rolls before 7. Placing the 6 or 8 pays better for the same bet.', ''],
+      [h('b', null, 'Hardways'), stay()], ['Bet that 4, 6, 8 or 10 rolls as a pair (2-2, 3-3, 4-4, 5-5) before it rolls any other way and before a 7.', '']]),
+    H('One-roll bets'),
+    T([[h('b', null, 'Field'), one()], ['Wins on 3, 4, 9, 10, 11. Pays double on 2 and triple on 12. Loses on 5, 6, 7, 8.', ''],
+      [h('b', null, 'Any Seven'), one()], ['The next roll is a 7.', ''],
+      [h('b', null, 'Any Craps'), one()], ['The next roll is 2, 3 or 12.', ''],
+      [h('b', null, 'Aces, Ace-Deuce, Yo, Boxcars'), one()], ['The next roll is exactly 2, 3, 11 or 12.', ''],
+      [h('b', null, 'Horn'), one()], ['Four bets in one: 2, 3, 11 and 12. Bet in multiples of $4.', ''],
+      [h('b', null, 'C & E'), one()], ['Half on Any Craps, half on Yo. Bet in multiples of $2.', ''],
+      [h('b', null, 'World'), one()], ['Horn plus Any Seven. A 7 gives your bet back. Bet in multiples of $5.', ''],
+      [h('b', null, 'Hops'), one()], ['The next roll shows an exact pair of dice, such as 2 and 5.', '']]));
+
+  else if (tab === 'pay') g.append(
+    H('Payouts and house edge'),
+    P('Sorted from best to worst for the player.'),
+    T([[h('b', null, 'Bet'), h('b', null, 'Pays'), h('b', null, 'Edge')],
+      ['Odds (take or lay)', 'true odds', '0%'], ["Don't Pass / Don't Come", '1:1', '1.36%'], ['Pass Line / Come', '1:1', '1.41%'],
+      ['Place 6 or 8', '7:6', '1.52%'], ['Buy 4 or 10', '2:1 less 5%', '1.67%'], ['Lay 4 or 10', '1:2 less 5%', '1.67%'], ['Field', '1:1, 2:1, 3:1', '2.78%'],
+      ['Place 5 or 9', '7:5', '4.00%'], ['Place 4 or 10', '9:5', '6.67%'], ['Big 6 / Big 8', '1:1', '9.09%'], ['Hard 6 / Hard 8', '9:1', '9.09%'],
+      ['Hard 4 / Hard 10', '7:1', '11.11%'], ['Any Craps', '7:1', '11.11%'], ['Ace-Deuce (3) / Yo (11)', '15:1', '11.11%'], ['C & E', '3:1 / 7:1', '11.11%'],
+      ['Hop, two numbers', '15:1', '11.11%'], ['Horn', '27:4 / 3:1', '12.50%'], ['World', 'as Horn', '13.33%'], ['Aces (2) / Boxcars (12)', '30:1', '13.89%'],
+      ['Hop, pair', '30:1', '13.89%'], ['Any Seven', '4:1', '16.67%']]),
+    H('Odds payouts'),
+    T([['Point 4 or 10', 'take 2:1', 'lay 1:2'], ['Point 5 or 9', 'take 3:2', 'lay 2:3'], ['Point 6 or 8', 'take 6:5', 'lay 5:6']]),
+    P('Payouts round down to the whole dollar, so size bets to the payout: odds on 5 or 9 in even amounts, odds on 6 or 8 in $5 units.'));
+
+  else g.append(
+    ...Q('Which bets are one roll only?', 'Field, Any Seven, Any Craps, Aces (2), Ace-Deuce (3), Yo (11), Boxcars (12), Horn, C & E, World and Hops. They are the amber spots. After the roll they are gone: a win returns your bet plus winnings to your chips, a loss is collected. Use Repeat to put them back.'),
+    ...Q('Which bets stay on the table?', 'Pass, Don\'t Pass, Come, Don\'t Come, all odds, Place, Buy, Lay, Big 6/8 and Hardways. They ride roll after roll until their own winning or losing number shows.'),
+    ...Q('What happens to a standing bet when it wins?', 'Place, Buy, Lay, Big 6/8, Hardways, Pass and Don\'t Pass pay you and stay up for the next roll, as at a casino. Come and Don\'t Come bets, and all odds, come back to your chips with the win.'),
+    ...Q('What is off on the come-out roll?', 'Place, Buy and Hardway bets and Come odds do not act on a come-out roll: they cannot win or lose until a point is set again. If a 7 rolls on the come-out, a Come bet on a number loses its flat part but its odds come back to you. Switch "work on the come-out" on in the menu to keep them live. Lay bets and Don\'t Come odds always work.'),
+    ...Q('Which bets can I not take down?', 'Pass Line once a point is set, and a Come bet once it has travelled to a number. These are contract bets, because the worst part of the bet is already behind you. Everything else can be taken down any time between rolls.'),
+    ...Q('What happens on a seven out?', 'Pass, Come numbers, Place, Buy, Big 6/8 and Hardways lose. Don\'t Pass, Don\'t Come numbers, Lay bets and Any Seven win. The dice pass to the next player.'),
+    ...Q('What is a push?', 'Nobody wins or loses and the bet stays. A 12 on the come-out pushes Don\'t Pass and Don\'t Come ("bar 12"), which is what gives the house its edge on those bets.'),
+    ...Q('Why did I get less than the listed payout?', 'Payouts round down to whole dollars. $5 on the 6 pays $5, while $6 pays $7. Bet in the units shown in the guide to get the full price.'),
+    ...Q('Place or Buy?', 'Buy the 4 and 10 (the commission costs less than the lower Place payout). Place the 5, 6, 8 and 9.'),
+    ...Q('What is the smartest way to play?', 'Pass Line or Don\'t Pass with full odds, plus one or two Come bets with odds, or Place the 6 and 8. The centre-table props are fun but carry 9% to 17% edges.'),
+    ...Q('Someone left their phone and it is their roll.', 'After 20 seconds the roll button unlocks for everyone. Between hands you can also move the dice on from the menu. A player who disconnects keeps their seat and chips for 15 minutes.'),
+    ...Q('Is this real money?', 'No. Chips are play money, start fresh at every table, and cannot be bought, sold or cashed out.'));
+  return g;
 }
 
 // ---------- chrome ----------
@@ -658,7 +855,8 @@ $('#rem').addEventListener('click', () => { removeMode = !removeMode; render(); 
 $('#rep').addEventListener('click', () => send({ t: 'repeat' }));
 $('#roll').addEventListener('click', () => { removeMode = false; send({ t: 'roll' }); });
 $('#menuBtn').addEventListener('click', () => openSheet({ type: 'menu' }));
-$('#logBtn').addEventListener('click', () => openSheet({ type: 'log' }));
+$('#guideBtn').addEventListener('click', () => openSheet({ type: 'guide', tab: 'basics' }));
+$('#stage').addEventListener('click', () => openSheet({ type: 'log' }));
 $('#share').addEventListener('click', async () => {
   const url = location.origin + location.pathname + '?t=' + state.code;
   try {
@@ -684,7 +882,7 @@ $('#create').addEventListener('click', () => enter('create'));
 $('#lobbyForm').addEventListener('submit', (e) => { e.preventDefault(); enter('join'); });
 
 // ---------- boot ----------
-buildFelt(); buildChips(); setDie($('#d1'), 3); setDie($('#d2'), 4);
+buildFelt(); buildChips(); buildCube($('#c1')); buildCube($('#c2')); setDie($('#d1'), 3); setDie($('#d2'), 4);
 $('#name').value = store.get('craps.name') || '';
 const urlCode = (new URLSearchParams(location.search).get('t') || '').toUpperCase().slice(0, 4);
 if (urlCode) $('#codeIn').value = urlCode;
