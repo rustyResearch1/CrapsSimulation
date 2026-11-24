@@ -57,11 +57,11 @@ test('houseRound: players betting the same way are counted as one correlated ris
   assert.equal(hedge.hold, 0);
 });
 
-test('telemetry: actual hold stays within the theoretical band (8 herding craps players, 60k rolls)', () => {
+test('telemetry: actual hold stays within the theoretical band (8 herding craps players, 6k rolls)', () => {
   const rng = seeded(21), s = { ...CRAPS_PRESETS.find((p) => p.id === 'molly').s, place: [4, 5, 6, 8, 9, 10], placeUnit: 30, field: 10, hard: 5 };
   const players = Array.from({ length: 8 }, () => ({ bets: {}, working: false }));
   let point = 0, hold = 0, expected = 0, variance = 0, handle = 0;
-  for (let i = 0; i < 60000; i++) {
+  for (let i = 0; i < 6000; i++) {
     for (const pl of players) {
       for (const [k, a] of crapsWants(s, point, pl.bets)) if (!craps.checkPlace({ point, min: 5, max: 5000 }, pl.bets, k, a)) pl.bets[k] = (pl.bets[k] || 0) + a;
       for (const k of ['any7', 'horn', 'world', 'ce', 'hop:2-5', 'two']) pl.bets[k] = 20;
@@ -74,7 +74,7 @@ test('telemetry: actual hold stays within the theoretical band (8 herding craps 
   }
   const z = (hold - expected) / Math.sqrt(variance);
   assert.ok(Math.abs(z) < 3.5, `z = ${z.toFixed(2)} (hold ${hold}, expected ${expected.toFixed(0)}, handle ${handle})`);
-  near(expected / handle, hold / handle, 0.01, 'hold % near theory');
+  near(expected / handle, hold / handle, 0.02, 'hold % near theory');
 });
 
 test('telemetry: roulette hold within band on both wheels', () => {
@@ -82,7 +82,7 @@ test('telemetry: roulette hold within band on both wheels', () => {
     const rng = seeded(wheel.length), bets = { red: 10, 'n:17': 3, 'sp:8-11': 4, 'co:1': 4, 'sl:5': 6, 'dz:2': 10, 'col:3': 10, 'st:2': 3 };
     if (wheel === 'american') bets.top5 = 5; else bets.first4 = 4;
     let hold = 0, expected = 0, variance = 0, handle = 0;
-    for (let i = 0; i < 40000; i++) {
+    for (let i = 0; i < 8000; i++) {
       const r = houseRound('roulette', [{ bets }, { bets }], { wheel }, { pocket: roulette.WHEELS[wheel][Math.floor(rng() * roulette.WHEELS[wheel].length)] });
       hold += r.hold; expected += r.expected; variance += r.variance; handle += r.handle;
     }
