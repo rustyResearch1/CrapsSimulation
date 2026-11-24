@@ -1,0 +1,13 @@
+{
+  "name": "craps-table",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Multiplayer Vegas-rules craps (play money) - server-authoritative WebSocket game",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": { "ws": "^8.18.0" }
+}
