@@ -32,6 +32,17 @@ export function diceFromBytes(bytes) {
   return null;
 }
 
+/** Yatzy: six values from a byte stream, five dice and the lucky die, by the same rule as diceFromBytes. */
+export function sixFromBytes(bytes) {
+  let out = '';
+  for (const b of bytes) {
+    if (b >= 252) continue;
+    out += (b % 6) + 1;
+    if (out.length === 6) return out;
+  }
+  return null;
+}
+
 /** A pocket from a byte stream: 4 bytes at a time as an unsigned integer, rejected above the largest multiple of the wheel size. */
 export function pocketFromBytes(bytes, wheelOrder) {
   const n = wheelOrder.length, limit = Math.floor(4294967296 / n) * n;
@@ -42,9 +53,10 @@ export function pocketFromBytes(bytes, wheelOrder) {
   return null;
 }
 
-/** kind: 'craps' | 'european' | 'american'. Returns the outcome as recorded in the roll log ("3-4" or "17"). */
+/** kind: 'craps' | 'yatzy' | 'european' | 'american'. Returns the outcome as recorded in the roll log ("3-4", "346215" or "17"). */
 export function outcomeFromBytes(kind, bytes, wheels) {
   if (kind === 'craps') { const d = diceFromBytes(bytes); return d && `${d[0]}-${d[1]}`; }
+  if (kind === 'yatzy') return sixFromBytes(bytes);
   return pocketFromBytes(bytes, wheels[kind]);
 }
 

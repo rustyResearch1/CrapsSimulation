@@ -1,0 +1,55 @@
+/* Yatzy: score card and a tray of 3D dice */
+#ystatus{padding:0 2px 7px;min-height:44px}
+#ystatus #phase{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+#ystatus #call{font-size:15px;font-weight:700;min-height:20px}
+#board{margin-top:8px}
+.card13{width:100%;border-collapse:separate;border-spacing:0 3px;table-layout:fixed}
+.card13 th{font-size:12px;font-weight:700;padding:5px 4px 6px;color:var(--ink);text-align:center;vertical-align:bottom}
+.card13 th:first-child{width:46%;text-align:left}
+.card13 th .who{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card13 th.on .who{color:var(--gold)}
+.card13 th .meta{display:block;font-size:10px;font-weight:600;color:var(--dim)}
+.card13 th .star{color:var(--gold)}
+.card13 td{height:27px;padding:0 6px;background:var(--panel);font-size:13px;font-variant-numeric:tabular-nums}
+.card13 td:first-child{border-radius:8px 0 0 8px;font-weight:600}
+.card13 td:last-child{border-radius:0 8px 8px 0}
+.card13 td small{color:var(--dim);font-weight:500;font-size:10.5px;margin-left:6px}
+.card13 td.sc{text-align:center;font-weight:800;font-size:14px;border-left:1px solid #1d3229}
+.card13 td.sc.zero{color:var(--dim)}
+.card13 td.sc.open{padding:2px 5px}
+.card13 td.sc.just{animation:just 1.4s ease-out}
+@keyframes just{0%,40%{background:rgba(240,199,94,.45)}100%{background:var(--panel)}}
+.pick{display:block;width:100%;height:23px;border-radius:7px;border:1.5px dashed rgba(240,199,94,.75);color:var(--gold);font-weight:800;font-size:13.5px;background:rgba(240,199,94,.08);min-height:0;padding:0}
+.pick.z{color:var(--dim);border-color:#3d5a4c;background:none}
+.pick.sel{background:var(--gold);color:#2a1c05;border-style:solid;border-color:var(--gold)}
+.card13 tr.sumrow td{background:var(--panel-2);font-size:12px;height:24px;color:#d8e4dc}
+.card13 tr.sumrow td.sc{font-size:12.5px}
+.card13 tr.sumrow td.sc.got{color:var(--win)}
+.card13 tr.tot td{background:#22392f;height:30px;font-size:14px;font-weight:800}
+.card13 tr.tot td.sc{font-size:17px;color:var(--gold)}
+.ybanner{margin:4px 0 8px;padding:12px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--gold);text-align:center}
+.ybanner h3{margin:0 0 4px;font:700 20px Georgia,serif;color:var(--gold)}
+.ybanner p{margin:0 0 10px;font-size:13px;color:#d8e4dc}
+.ybanner .btn{margin-top:8px}
+
+/* dice */
+#tray{display:flex;justify-content:center;gap:11px;padding:16px 8px 12px;margin-bottom:8px;border-radius:14px;
+  background:radial-gradient(120% 100% at 50% 0%,#1c9468,#0e6245 55%,#083f2d);border:5px solid #4a2c18;box-shadow:inset 0 0 22px rgba(0,0,0,.5)}
+.dw{position:relative;width:52px;height:52px;perspective:420px;transition:transform .18s;border-radius:11px;padding:0;min-height:0}
+.dw.held{transform:translateY(-9px)}
+.dw.held:after{content:"HELD";position:absolute;left:50%;bottom:-13px;transform:translateX(-50%);font-size:8.5px;font-weight:900;letter-spacing:.08em;color:var(--gold)}
+.dw.held .df{box-shadow:inset 0 0 0 3px var(--gold)}
+.dw.blank{opacity:.3}
+.ycube{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .85s cubic-bezier(.2,.75,.25,1)}
+.df{position:absolute;inset:0;box-sizing:border-box;border-radius:10px;background:linear-gradient(145deg,#fffdf6,#e6e1d2);box-shadow:inset 0 0 0 1px rgba(0,0,0,.2);
+  display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:7px;backface-visibility:hidden}
+.df i{width:9px;height:9px;border-radius:50%;background:#1a1d21;place-self:center;visibility:hidden;box-shadow:inset 0 1px 1px rgba(255,255,255,.25)}
+.df i.o{visibility:visible}
+.df.f1 i.o{background:#c0261f;width:12px;height:12px}
+.f1{transform:translateZ(26px)}.f6{transform:rotateY(180deg) translateZ(26px)}
+.f3{transform:rotateY(90deg) translateZ(26px)}.f4{transform:rotateY(-90deg) translateZ(26px)}
+.f5{transform:rotateX(90deg) translateZ(26px)}.f2{transform:rotateX(-90deg) translateZ(26px)}
+.act.primary{flex:1.3;background:linear-gradient(#f6d77c,#d9a93a);color:#2a1c05;border:0;font-size:15px;padding:14px 4px}
+.act.primary:disabled{background:var(--panel-2);color:var(--dim);opacity:1;font-size:12.5px}
+.act.score{flex:1.3;padding:14px 4px;font-size:14px}
+.act.score:not(:disabled){background:#1f7a47;border-color:#1f7a47;color:#fff}

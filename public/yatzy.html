@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0a1411">
+<title>Yatzy</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/base.css">
+<link rel="stylesheet" href="/yatzy.css">
+</head>
+<body>
+<div id="game">
+  <header><div class="wrap">
+    <div class="hbar">
+      <div class="code"><small>Yatzy</small><span id="code"></span></div>
+      <span class="dot off" id="conn" title="connection"></span>
+      <span class="sp"></span>
+      <button class="hbtn" id="share">Invite</button>
+      <button class="hbtn" id="guideBtn">Guide</button>
+      <button class="hbtn" id="menuBtn">Menu</button>
+    </div>
+    <div id="ystatus"><div id="phase"></div><div id="call"></div></div>
+  </div></header>
+  <div class="wrap"><main id="board"></main></div>
+  <footer id="dock"><div class="wrap">
+    <div id="tray"></div>
+    <div class="acts" id="acts"></div>
+  </div></footer>
+</div>
+<div id="scrim" hidden></div>
+<div id="sheet" hidden></div>
+<div id="toast"></div>
+<script src="/common.js"></script>
+<script src="/fair-ui.js"></script>
+<script type="module" src="/yatzy.js"></script>
+</body>
+</html>

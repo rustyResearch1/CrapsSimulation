@@ -62,3 +62,9 @@ Blackjack: 6 decks shuffled every hand, dealer stands on all 17s, blackjack pays
 cards, double after split, split to 4 hands, split aces get one card, insurance 2:1, no surrender.
 Baccarat: 8-deck punto banco, Banker pays 0.95:1, Tie 8:1, pairs 11:1. Both deal from a provably
 fair shoe (`cards6` / `cards8` in `shared/fair.js`).
+
+## Yatzy
+
+1v1 (or solo) on the 13-box card: 35 bonus at 63, full house 25, straights 30/40, Yatzy 50, +100 for each
+extra Yatzy. Three rolls a turn plus banked bonus rolls: one to start, and a 1-in-6 "lucky die" on the
+first roll of each turn banks another (max 3). Every roll is six fair values (`yatzy` in `shared/fair.js`).

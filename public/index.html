@@ -13,7 +13,7 @@
 <div id="lobby">
   <form class="card" id="lobbyForm" autocomplete="off">
     <h1 class="serif">CASINO</h1>
-    <p class="sub">Craps · Roulette · Blackjack · Baccarat · play chips only · up to 8 players</p>
+    <p class="sub">Craps · Roulette · Blackjack · Baccarat · Yatzy · play chips only</p>
     <label>Game</label>
     <div class="seg" id="gameSeg">
       <button type="button" data-game="craps" class="on">Craps</button>
@@ -22,6 +22,7 @@
     <div class="seg" id="gameSeg2" style="margin-top:6px">
       <button type="button" data-game="blackjack">Blackjack</button>
       <button type="button" data-game="baccarat">Baccarat</button>
+      <button type="button" data-game="yatzy">Yatzy<small>1v1 dice</small></button>
     </div>
     <div id="wheelPick" hidden>
       <label>Wheel</label>
@@ -645,7 +646,7 @@ $('#share').addEventListener('click', async () => {
   } catch { toast(`Share code ${state.code}`); }
 });
 
-let lobbyGame = ['roulette', 'blackjack', 'baccarat'].includes(store.get('casino.game')) ? store.get('casino.game') : 'craps';
+let lobbyGame = ['roulette', 'blackjack', 'baccarat', 'yatzy'].includes(store.get('casino.game')) ? store.get('casino.game') : 'craps';
 let lobbyWheel = store.get('casino.wheel') === 'american' ? 'american' : 'european';
 function paintLobby() {
   for (const b of document.querySelectorAll('#gameSeg button, #gameSeg2 button')) b.classList.toggle('on', b.dataset.game === lobbyGame);

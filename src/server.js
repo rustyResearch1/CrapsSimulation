@@ -15,6 +15,7 @@ import { Table } from './table.js';
 import { RouletteTable } from './roulette-table.js';
 import { BlackjackTable } from './blackjack-table.js';
 import { BaccaratTable } from './baccarat-table.js';
+import { YatzyTable } from './yatzy-table.js';
 import { createStats } from './stats.js';
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -29,6 +30,10 @@ const STATIC = {
   '/roulette': ['public/roulette.html', 'text/html; charset=utf-8', 'no-cache'],
   '/blackjack': ['public/cards.html', 'text/html; charset=utf-8', 'no-cache'],
   '/baccarat': ['public/cards.html', 'text/html; charset=utf-8', 'no-cache'],
+  '/yatzy': ['public/yatzy.html', 'text/html; charset=utf-8', 'no-cache'],
+  '/yatzy.js': ['public/yatzy.js', JS, 'no-cache'],
+  '/yatzy.css': ['public/yatzy.css', 'text/css; charset=utf-8', 'no-cache'],
+  '/shared/yatzy.js': ['shared/yatzy.js', JS, 'no-cache'],
   '/lab': ['public/lab.html', 'text/html; charset=utf-8', 'no-cache'],
   '/house': ['public/house.html', 'text/html; charset=utf-8', 'no-cache'],
   '/house.js': ['public/house.js', JS, 'no-cache'],
@@ -164,6 +169,7 @@ function handle(conn, msg) {
     const table = msg.game === 'roulette' ? new RouletteTable(code, { wheel: msg.wheel, stats })
       : msg.game === 'blackjack' ? new BlackjackTable(code, { stats })
       : msg.game === 'baccarat' ? new BaccaratTable(code, { stats })
+      : msg.game === 'yatzy' ? new YatzyTable(code, { stats })
       : new Table(code, { stats });
     stats.tableOpened(table.game);
     tables.set(table.code, table);

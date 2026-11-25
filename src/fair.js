@@ -11,7 +11,7 @@ export const sha256hex = (text) => createHash('sha256').update(text).digest('hex
 export const hmac = (key, text) => new Uint8Array(createHmac('sha256', key).update(text).digest());
 
 export class Fair {
-  /** kind: 'craps' | 'european' | 'american' | 'cards6' | 'cards8' (a shoe of that many decks, reshuffled every round) */
+  /** kind: 'craps' | 'yatzy' (five dice and a lucky die per roll) | 'european' | 'american' | 'cards6' | 'cards8' (a shoe of that many decks, reshuffled every round) */
   constructor(kind) {
     this.kind = kind;
     this.past = [];
@@ -48,7 +48,7 @@ export class Fair {
     const out = outcomeFromBytes(this.kind, bytes, WHEELS);
     if (out === null) throw new Error('fair: byte stream exhausted');   // chance below 1e-100
     this.rolls.push({ n, cs, out });
-    return this.kind === 'craps' ? out.split('-').map(Number) : out;
+    return this.kind === 'craps' ? out.split('-').map(Number) : this.kind === 'yatzy' ? [...out].map(Number) : out;
   }
 
   /**
