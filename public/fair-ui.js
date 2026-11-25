@@ -74,7 +74,7 @@ const Fair = (() => {
 
   /** The sheet body. `rerender` redraws the sheet after an async step. */
   function sheet(state, myId, send, rerender) {
-    const f = state.fair, unit = ({ roulette: 'spin', blackjack: 'hand', baccarat: 'coup' })[state.game] || 'roll';
+    const f = state.fair, unit = state.shoe && state.shoe.mode === 'shoe' ? 'shoe' : ({ roulette: 'spin', blackjack: 'hand', baccarat: 'coup' })[state.game] || 'roll';
     const g = h('div', { class: 'guide' });
     if (!f) { g.append(h('p', null, 'This table is not using verifiable dice.')); return g; }
     const mineIn = f.seeded.includes(myId);
@@ -89,7 +89,7 @@ const Fair = (() => {
       h('button', { class: 'btn ghost', type: 'button', disabled: !f.rolls, style: 'margin-top:6px;opacity:' + (f.rolls ? 1 : 0.5),
         on: { click: () => send({ t: 'reveal' }) } }, f.rolls ? 'Reveal this seed and start a new one' : `Reveal opens after the first ${unit}`),
       h('h3', null, 'Revealed seeds'));
-    if (!f.past.length) g.append(h('p', null, state.game === 'roulette' ? 'None yet. A seed is retired every 10 spins.' : state.game === 'blackjack' ? 'None yet. A seed is retired every 8 hands.' : state.game === 'baccarat' ? 'None yet. A seed is retired every 10 coups.' : state.game === 'yatzy' ? 'None yet. A seed is retired every few turns and at the end of the game.' : 'None yet. A seed is retired at the end of each shooter\'s hand.'));
+    if (!f.past.length) g.append(h('p', null, state.shoe && state.shoe.mode === 'shoe' ? 'None yet. The seed is revealed each time the shoe is shuffled.' : state.game === 'roulette' ? 'None yet. A seed is retired every 10 spins.' : state.game === 'blackjack' ? 'None yet. A seed is retired every 8 hands.' : state.game === 'baccarat' ? 'None yet. A seed is retired every 10 coups.' : state.game === 'yatzy' ? 'None yet. A seed is retired every few turns and at the end of the game.' : 'None yet. A seed is retired at the end of each shooter\'s hand.'));
     for (const e of f.past) {
       const key = state.code + ':' + e.id;
       g.append(h('div', { style: 'border-top:1px solid #20362d;padding:10px 0' },

@@ -31,6 +31,13 @@
         <button type="button" data-wheel="american">Double zero<small>American · 5.26% edge</small></button>
       </div>
     </div>
+    <div id="shoePick" hidden>
+      <label>Shuffle</label>
+      <div class="seg" id="shoeSeg">
+        <button type="button" data-shoe="hand" class="on">Every hand<small>fresh shoe each deal</small></button>
+        <button type="button" data-shoe="shoe">Shoe plays out<small>cut card at 75%</small></button>
+      </div>
+    </div>
     <label for="name">Your name</label>
     <input id="name" maxlength="14" placeholder="e.g. Lucky" enterkeyhint="done">
     <button type="button" class="btn gold" id="create">Open a new table</button>
@@ -647,13 +654,17 @@ $('#share').addEventListener('click', async () => {
 });
 
 let lobbyGame = ['roulette', 'blackjack', 'baccarat', 'yatzy'].includes(store.get('casino.game')) ? store.get('casino.game') : 'craps';
+let lobbyShoe = store.get('casino.shoe') === 'shoe' ? 'shoe' : 'hand';
 let lobbyWheel = store.get('casino.wheel') === 'american' ? 'american' : 'european';
 function paintLobby() {
   for (const b of document.querySelectorAll('#gameSeg button, #gameSeg2 button')) b.classList.toggle('on', b.dataset.game === lobbyGame);
   for (const b of document.querySelectorAll('#wheelSeg button')) b.classList.toggle('on', b.dataset.wheel === lobbyWheel);
   $('#wheelPick').hidden = lobbyGame !== 'roulette';
+  for (const b of document.querySelectorAll('#shoeSeg button')) b.classList.toggle('on', b.dataset.shoe === lobbyShoe);
+  $('#shoePick').hidden = lobbyGame !== 'blackjack' && lobbyGame !== 'baccarat';
 }
 for (const seg of ['#gameSeg', '#gameSeg2']) $(seg).addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; lobbyGame = b.dataset.game; store.set('casino.game', lobbyGame); paintLobby(); });
+$('#shoeSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; lobbyShoe = b.dataset.shoe; store.set('casino.shoe', lobbyShoe); paintLobby(); });
 $('#wheelSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; lobbyWheel = b.dataset.wheel; store.set('casino.wheel', lobbyWheel); paintLobby(); });
 paintLobby();
 
@@ -662,7 +673,7 @@ function enter(kind) {
   if (!name) { $('#lobbyErr').textContent = 'Enter your name first'; $('#name').focus(); return; }
   store.set('craps.name', name);
   $('#lobbyErr').textContent = '';
-  if (kind === 'create') pending = { t: 'create', name, game: lobbyGame, wheel: lobbyWheel };
+  if (kind === 'create') pending = { t: 'create', name, game: lobbyGame, wheel: lobbyWheel, shoe: lobbyShoe };
   else {
     const code = $('#codeIn').value.trim().toUpperCase();
     if (code.length !== 4) { $('#lobbyErr').textContent = 'Table codes are 4 letters'; return; }

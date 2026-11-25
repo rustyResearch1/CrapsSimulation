@@ -167,3 +167,39 @@ test('card tables: fair shoes verify, the hole card never leaks, chips are conse
   assert.match(c.act(p, { t: 'bet', key: 'dragon', amt: 5 }), /Unknown/);
 });
 function require_move(hand, t) { return bj.basicStrategy({ cards: hand.cards.map((x) => x.c), split: hand.split, splitAces: hand.splitAces }, t.dealer[0].c, t.player(t.turn.id).hands.length); }
+
+test('shoe mode: one shuffle is dealt down to the cut card, then revealed and verified', async () => {
+  const { BlackjackTable } = await import('../src/blackjack-table.js');
+  const { verifyEpoch } = await import('../shared/fair.js');
+  const { sha256hex, hmac } = await import('../src/fair.js');
+  const t = new BlackjackTable('SHOE', { shoe: 'shoe' });
+  const a = t.addPlayer('A').player, b = t.addPlayer('B').player;
+  t.act(a, { t: 'seed', seed: 'alpha' });
+  const seen = [];
+  let hands = 0, shuffles = 0, lastLeft = 312;
+  for (let guard = 0; guard < 400 && shuffles < 2; guard++) {
+    for (const p of [a, b]) { if (p.bank < 100) p.bank = 1000; t.act(p, { t: 'bet', amt: 10 }); }
+    const no = t.shoeNo;
+    assert.equal(t.act(a, { t: 'deal' }), null);
+    if (t.shoeNo !== no) shuffles++;
+    if (shuffles === 2) break;
+    assert.equal(t.act(a, { t: 'reveal' }), t.phase === 'bet' && !t.live ? null : 'This seed is revealed when the shoe is shuffled');
+    for (let i = 0; i < 40 && t.phase !== 'bet'; i++) {
+      if (t.phase === 'insurance') { t.act(a, { t: 'insure', on: false }); t.act(b, { t: 'insure', on: false }); } else t.act(t.player(t.turn.id), { t: 'stand' });
+    }
+    assert.equal(t.phase, 'bet');
+    const s = t.snapshot();
+    if (t.live) { assert.ok(s.shoe.left < lastLeft, 'the shoe runs down'); lastLeft = s.shoe.left; assert.equal(typeof s.count, 'number'); }
+    hands++;
+    seen.push(...t.dealer.map((x) => x.c), ...t.players.flatMap((p) => p.hands.flatMap((h) => h.cards.map((x) => x.c))));
+  }
+  assert.ok(hands > 20, `a shoe lasts many hands (${hands})`);
+  const epoch = t.fair.epochData(1);
+  assert.ok(epoch.serverSeed, 'the finished shoe is revealed');
+  assert.equal(epoch.rolls.length, 1);
+  assert.ok(epoch.rolls[0].out.length / 2 >= 234 && epoch.rolls[0].out.length / 2 < 312);
+  const counts = {}; for (let i = 0; i < epoch.rolls[0].out.length; i += 2) { const c = epoch.rolls[0].out.slice(i, i + 2); counts[c] = (counts[c] || 0) + 1; }
+  assert.ok(Math.max(...Object.values(counts)) <= 6, 'no card appears more than six times in a six-deck shoe');
+  const v = await verifyEpoch(epoch, { sha256hex, hmac }, {});
+  assert.deepEqual([v.hashOk, v.seedsOk, v.bad.length], [true, true, 0]);
+});

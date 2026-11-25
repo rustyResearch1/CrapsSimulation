@@ -60,7 +60,8 @@ red/black, even/odd, low/high. No la partage or en prison; no call (racetrack) b
 
 Blackjack: 6 decks shuffled every hand, dealer stands on all 17s, blackjack pays 3:2, double any two
 cards, double after split, split to 4 hands, split aces get one card, insurance 2:1, no surrender.
-Baccarat: 8-deck punto banco, Banker pays 0.95:1, Tie 8:1, pairs 11:1. Both deal from a provably
+Both card games can be opened with "Shoe plays out": one shuffle is dealt down to a cut card at 75%, then
+revealed and reshuffled (blackjack shows a Hi-Lo count trainer in that mode). Baccarat: 8-deck punto banco, Banker pays 0.95:1, Tie 8:1, pairs 11:1. Both deal from a provably
 fair shoe (`cards6` / `cards8` in `shared/fair.js`).
 
 ## Yatzy

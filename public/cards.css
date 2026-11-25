@@ -95,3 +95,8 @@
 .act.primary:disabled{background:var(--panel-2);color:var(--dim);opacity:1;font-size:12.5px;letter-spacing:0}
 .act.big{padding:14px 4px;font-size:15px}
 @media (min-width:560px){:root{--cw:60px;--ch:86px}#felt.bj{height:400px}}
+
+.shoeN,.trayN{position:absolute;top:44px;font-size:9.5px;font-weight:700;color:rgba(233,217,160,.9);text-align:center;line-height:1.25;white-space:nowrap}
+.shoeN{right:6px;width:62px}.trayN{left:6px;width:62px}
+.shoeN.last{color:#ffb655}
+.countPill{position:absolute;left:8px;top:74px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:9px;background:rgba(0,0,0,.6);color:#fff;font-variant-numeric:tabular-nums}

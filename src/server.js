@@ -167,8 +167,8 @@ function handle(conn, msg) {
     if (tables.size >= MAX_TABLES) return send(conn, { t: 'error', msg: 'Server is full - try again later' });
     const code = newCode();
     const table = msg.game === 'roulette' ? new RouletteTable(code, { wheel: msg.wheel, stats })
-      : msg.game === 'blackjack' ? new BlackjackTable(code, { stats })
-      : msg.game === 'baccarat' ? new BaccaratTable(code, { stats })
+      : msg.game === 'blackjack' ? new BlackjackTable(code, { stats, shoe: msg.shoe })
+      : msg.game === 'baccarat' ? new BaccaratTable(code, { stats, shoe: msg.shoe })
       : msg.game === 'yatzy' ? new YatzyTable(code, { stats })
       : new Table(code, { stats });
     stats.tableOpened(table.game);

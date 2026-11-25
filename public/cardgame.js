@@ -191,6 +191,16 @@ export function start(def) {
   net.connect();
 }
 
+/** Shoe and discard tray, with the cards left when one shoe is dealt hand after hand. */
+export function shoeBits(s) {
+  const out = [h('div', { class: 'tray' }), h('div', { class: 'shoe' })], sh = s.shoe;
+  if (sh && sh.mode === 'shoe') out.push(
+    h('div', { class: 'shoeN' + (sh.last ? ' last' : '') }, `${sh.left} left`, h('br'), sh.last ? 'last hand' : `cut at ${sh.cutAt}`),
+    h('div', { class: 'trayN' }, `${sh.total - sh.left} used`));
+  else if (sh) out.push(h('div', { class: 'shoeN' }, 'shuffled', h('br'), 'every hand'));
+  return out;
+}
+
 /** Guide building blocks shared by both games. */
 export const G = {
   T: (rows) => h('table', null, rows.map((r) => h('tr', null, r.map((c) => h('td', null, c))))),

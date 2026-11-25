@@ -1,5 +1,5 @@
 // Baccarat client: Player and Banker card zones under the dealer, betting boxes, bead road.
-import { start, G } from '/cardgame.js';
+import { start, G, shoeBits } from '/cardgame.js';
 import { total, BETS } from '/shared/baccarat.js';
 
 const sum = (b) => Object.values(b || {}).reduce((s, v) => s + v, 0);
@@ -29,7 +29,7 @@ function felt(c) {
       h('span', { class: 't' }, name), h('span', { class: 's' }, pays), others ? h('span', { class: 'oth' }, money(others)) : null, my ? h('span', { class: 'badge' }, money(my)) : null);
   };
   const beads = (done ? s.history : s.history.slice(1)).slice(0, 60).reverse();
-  return [h('div', { class: 'tray' }), h('div', { class: 'shoe' }), h('div', { class: 'dealerTag', style: 'margin-top:6px' }, 'DEALER'),
+  return [...shoeBits(s), h('div', { class: 'dealerTag', style: 'margin-top:6px' }, 'DEALER'),
     h('div', { class: 'bacTop' }, zone('player', 'p'), zone('banker', 'b')),
     h('div', { class: 'bacBets' }, BOX.map(box)), h('div', { class: 'bacBets two' }, PAIRS.map(box)),
     h('div', { class: 'road', 'aria-label': 'Results so far' }, beads.map((w) => h('i', { class: w }, w)))];
@@ -63,7 +63,7 @@ function guide(tab) {
     P('All bets are one coup only: they are settled and cleared on every deal.'));
   else d.append(
     Q('Which bet is best?', 'Banker, by a hair. Player is close behind. Tie and the pairs cost roughly ten times as much per dollar.'),
-    Q('Do the dots predict anything?', 'No. The road is a record of past coups. Each coup is dealt from a fresh, verifiable shuffle.'),
+    Q('Do the dots predict anything?', 'No. The road is only a record of past coups, and the shuffle is verifiable.'),
     Q('Who deals?', 'Anyone at the table can tap Deal once at least one bet is down.'),
     Q('How do I know the shuffle is honest?', 'Menu → Provably fair. The shoe comes from a seed committed before the deal, and you can re-check every card.'));
   return d;

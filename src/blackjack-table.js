@@ -6,15 +6,16 @@ import { DECKS, value, isBust, isBlackjack, dealerHits, canSplit, canDouble, car
 
 export const TURN_IDLE_MS = 25_000;      // after this, anyone may stand a stalled player's hand
 export const INSURANCE_IDLE_MS = 15_000; // after this, anyone may close insurance
+const hiLo = (c) => ('23456'.includes(c[0]) ? 1 : 'TJQKA'.includes(c[0]) ? -1 : 0);
 
 export class BlackjackTable extends CardTable {
   constructor(code, opts = {}) {
     super('blackjack', code, { decks: DECKS, ...opts });
-    this.phase = 'bet'; this.dealer = []; this.hole = false; this.turn = null; this.turnAt = 0; this.last = null; this.shoe = null;
+    this.phase = 'bet'; this.dealer = []; this.hole = false; this.turn = null; this.turnAt = 0; this.last = null; this.shoe = null; this.running = 0;
   }
   newSeat() { return { bet: 0, lastBet: 0, hands: [], insurance: null }; }
   get inRound() { return this.phase !== 'bet'; }
-  card() { return { c: this.shoe.next(), q: ++this.seq }; }
+  card() { const c = this.shoe.next(); this.running += hiLo(c); return { c, q: ++this.seq }; }
   faces(cards) { return cards.map((x) => x.c); }
 
   removePlayer(id) {
@@ -76,7 +77,9 @@ export class BlackjackTable extends CardTable {
     if (!active.length) return 'Place a bet before dealing';
     const low = active.find((p) => p.bet < this.min);
     if (low) return `${low.name}'s bet is under the $${this.min} minimum`;
+    const shoeNo = this.shoeNo;
     this.shoe = this.openShoe();
+    if (this.shoeNo !== shoeNo) this.running = 0;
     this.seq = 0; this.last = null;
     for (const p of this.players) { p.hands = []; p.insurance = null; p.lastNet = 0; }
     for (const p of active) { p.hands = [{ cards: [], bet: p.bet }]; p.lastBet = p.bet; p.bet = 0; }
@@ -198,6 +201,8 @@ export class BlackjackTable extends CardTable {
     const show = (cards) => cards.map((x) => ({ c: x.c, q: x.q }));
     return {
       ...this.base(), phase: this.phase, turn: this.turn, turnAt: this.turnAt, idleMs: TURN_IDLE_MS, insIdleMs: INSURANCE_IDLE_MS, last: this.last,
+      // Hi-Lo running count of the cards everyone has seen this shoe (the face-down hole card is left out)
+      count: this.mode === 'shoe' ? this.running - (this.hole && this.dealer[1] ? hiLo(this.dealer[1].c) : 0) : null,
       // The hole card stays face down, and off the wire, until the dealer plays.
       dealer: this.dealer.map((x, i) => (this.hole && i === 1 ? { c: null, q: x.q } : { c: x.c, q: x.q })),
       players: this.players.map((p) => ({

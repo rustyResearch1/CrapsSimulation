@@ -1,5 +1,5 @@
 // Blackjack client: semi-circular felt, dealer and shoe at the top, seats along the rail.
-import { start, G } from '/cardgame.js';
+import { start, G, shoeBits } from '/cardgame.js';
 import { value, basicStrategy, canSplit, canDouble } from '/shared/blackjack.js';
 
 const rid = (s) => (s.phase === 'bet' ? s.n : s.n + 1);           // the round the cards on the felt belong to
@@ -8,7 +8,7 @@ const inPlay = (p, s) => (s.phase === 'bet' ? 0 : p.hands.reduce((t, x) => t + x
 const short = (n) => (n >= 1000 ? (n / 1000).toFixed(n % 1000 ? 1 : 0) + 'k' : String(n));
 const RES = { blackjack: ['Blackjack!', 'win'], win: ['Win', 'win'], push: ['Push', 'push'], lose: ['Lose', 'lose'], bust: ['Bust', 'lose'] };
 const MOVE = { H: 'Hit', S: 'Stand', D: 'Double', Ds: 'Double', P: 'Split' };
-let coach = store.get('bj.coach') !== false;
+let coach = store.get('bj.coach') !== false, counter = store.get('bj.count') === true;
 let turnKey = '', turnSeen = 0;                                    // when this device first saw the current turn
 
 function total(cards, hand, final) {
@@ -39,7 +39,7 @@ function felt(c) {
   arc.innerHTML = '<svg viewBox="0 0 360 120"><defs><path id="a1" d="M70 14 Q180 92 290 14"/><path id="a2" d="M84 40 Q180 108 276 40"/></defs>' +
     '<text font-size="13" font-weight="700"><textPath href="#a1" startOffset="50%" text-anchor="middle">BLACKJACK PAYS 3 TO 2</textPath></text>' +
     '<text font-size="8.5"><textPath href="#a2" startOffset="50%" text-anchor="middle">Dealer stands on all 17s · Insurance pays 2 to 1</textPath></text></svg>';
-  const out = [h('div', { class: 'tray' }), h('div', { class: 'shoe' }),
+  const out = [...shoeBits(s), counter && s.count !== null && s.count !== undefined ? h('div', { class: 'countPill' }, `Count ${s.count > 0 ? '+' : ''}${s.count} · true ${(s.count / Math.max(0.5, s.shoe.left / 52)).toFixed(1)}`) : null,
     h('div', { class: 'bjDealer zone' }, h('div', { class: 'dealerTag' }, 'DEALER'),
       h('div', { class: 'cardsRow', style: '--cw:44px;--ch:62px' }, dealer.map((x) => c.cardEl(x))),
       h('div', { class: 'total' + (dt ? dt.cls : ''), style: dt ? '' : 'visibility:hidden' }, dt ? dt.text : '0')), arc];
@@ -123,12 +123,12 @@ function header(c) {
     mine: res ? (res.net > 0 ? `You won ${money(res.net)}` : res.net < 0 ? `You lost ${money(-res.net)}` : 'Push: your bet comes back') : '', mineClass: res ? (res.net > 0 ? 'pos' : res.net < 0 ? 'neg' : '') : '' };
 }
 
-function guide(tab) {
+function guide(tab, state) {
   const { T, P, H, UL, Q } = G, d = h('div', { class: 'guide' });
   if (tab === 'basics') d.append(
     P('Get closer to 21 than the dealer without going over. Face cards count 10, aces count 1 or 11.'),
     H('A hand, step by step'), UL(['Everyone bets, then anyone taps Deal.', 'You get two cards face up. The dealer gets one up and one face down.', 'Each player acts in seat order: hit, stand, double or split.', 'The dealer turns the hole card and draws to 17 or more.', 'Beat the dealer and you are paid 1 to 1. A two-card 21 pays 3 to 2.']),
-    H('Table rules'), T([['Decks', '6, a fresh shuffle every hand'], ['Dealer', 'Stands on all 17s'], ['Blackjack', 'Pays 3 to 2'], ['Double', 'Any first two cards, also after a split'], ['Split', 'Up to 4 hands; split aces get one card each'], ['Insurance', 'Half your bet, pays 2 to 1'], ['Surrender', 'Not offered']]),
+    H('Table rules'), T([['Decks', state.shoe.mode === 'shoe' ? '6, dealt down to the cut card at 75%' : '6, a fresh shuffle every hand'], ['Dealer', 'Stands on all 17s'], ['Blackjack', 'Pays 3 to 2'], ['Double', 'Any first two cards, also after a split'], ['Split', 'Up to 4 hands; split aces get one card each'], ['Insurance', 'Half your bet, pays 2 to 1'], ['Surrender', 'Not offered']]),
     P('With perfect basic strategy the house edge is about 0.5%.'));
   else if (tab === 'plays') d.append(
     H('Your four moves'), T([['Hit', 'Take another card'], ['Stand', 'Keep what you have'], ['Double', 'Double the bet, take exactly one card'], ['Split', 'A pair becomes two hands, each with its own bet']]),
@@ -138,7 +138,7 @@ function guide(tab) {
     Q('Is insurance worth it?', 'No. It is a side bet that the hole card is a ten, with a 7.4% house edge.'),
     Q('Why did my 21 after a split only pay 1 to 1?', 'Only a two-card 21 on your original hand is a blackjack. After a split it is a normal 21.'),
     Q('What if someone walks away mid-hand?', 'After 25 seconds anyone can stand that hand so the table keeps moving.'),
-    Q('Can I count cards here?', 'No. The six-deck shoe is reshuffled every hand, so each hand starts fresh.'),
+    state.shoe.mode === 'shoe' ? Q('Can I count cards here?', 'Yes. This table deals one six-deck shoe down to the cut card (about 75%). Turn on the count trainer in the menu to see the Hi-Lo running and true count.') : Q('Can I count cards here?', 'Not at this table: the shoe is reshuffled every hand. Open a table with “Shoe plays out” to practise counting.'),
     Q('How do I know the shuffle is honest?', 'Menu → Provably fair. The shoe comes from a seed committed before the deal, and you can re-check every card.'));
   return d;
 }
@@ -152,6 +152,8 @@ start({
   ticks: (s) => s.phase !== 'bet',
   betLines: (p, s) => (s.phase === 'bet' ? (p.bet ? [`Bet ${money(p.bet)}`] : ['No bet yet']) : p.hands.map((x, i) => `Hand ${i + 1}: ${money(x.bet)}`).concat(p.insurance ? [`Insurance ${money(p.insurance)}`] : [])),
   menu: (c, rerender) => [h('div', { class: 'tog' }, h('span', null, 'Coach: show basic strategy on my turn'),
-    h('button', { class: 'sw' + (coach ? ' on' : ''), 'aria-label': 'Toggle coach', on: { click: () => { coach = !coach; store.set('bj.coach', coach); c.rerender(); } } }))],
+    h('button', { class: 'sw' + (coach ? ' on' : ''), 'aria-label': 'Toggle coach', on: { click: () => { coach = !coach; store.set('bj.coach', coach); c.rerender(); } } })),
+    c.state.shoe.mode === 'shoe' ? h('div', { class: 'tog' }, h('span', null, 'Count trainer: show the Hi-Lo count'),
+      h('button', { class: 'sw' + (counter ? ' on' : ''), 'aria-label': 'Toggle count trainer', on: { click: () => { counter = !counter; store.set('bj.count', counter); c.rerender(); } } })) : null],
   header, felt, hand, actions, guide, guideTabs: [['basics', 'The game'], ['plays', 'Moves & strategy'], ['faq', 'FAQ']],
 });
