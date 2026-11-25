@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0a1411">
-<title>Craps & Roulette</title>
+<title>Casino Tables</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/base.css">
 </head>
@@ -13,11 +13,15 @@
 <div id="lobby">
   <form class="card" id="lobbyForm" autocomplete="off">
     <h1 class="serif">CASINO</h1>
-    <p class="sub">Craps · Roulette · play chips only · up to 8 players</p>
+    <p class="sub">Craps · Roulette · Blackjack · Baccarat · play chips only · up to 8 players</p>
     <label>Game</label>
     <div class="seg" id="gameSeg">
       <button type="button" data-game="craps" class="on">Craps</button>
       <button type="button" data-game="roulette">Roulette</button>
+    </div>
+    <div class="seg" id="gameSeg2" style="margin-top:6px">
+      <button type="button" data-game="blackjack">Blackjack</button>
+      <button type="button" data-game="baccarat">Baccarat</button>
     </div>
     <div id="wheelPick" hidden>
       <label>Wheel</label>
@@ -125,11 +129,13 @@ const connect = () => net.connect();
 function send(obj) { if (wsOpen) net.send(obj); else toast('Reconnecting…'); }
 function setConn() { $('#conn').classList.toggle('off', !wsOpen); }
 
+let leaving = false;
 function onMessage(m) {
+  if (leaving) return;
   if (m.t === 'joined') {
     session = { code: m.code, id: m.id, token: m.token };
     store.set('craps.session', session);
-    if (m.game === 'roulette') { location.replace('/roulette?t=' + m.code); return; }   // that table lives on its own page
+    if (m.game && m.game !== 'craps') { leaving = true; location.replace('/' + m.game + '?t=' + m.code); return; }   // that table lives on its own page
     try { history.replaceState(null, '', '?t=' + m.code); } catch {}
     seenRoll = -1; undo = [];
     $('#lobbyErr').textContent = '';
@@ -639,14 +645,14 @@ $('#share').addEventListener('click', async () => {
   } catch { toast(`Share code ${state.code}`); }
 });
 
-let lobbyGame = store.get('casino.game') === 'roulette' ? 'roulette' : 'craps';
+let lobbyGame = ['roulette', 'blackjack', 'baccarat'].includes(store.get('casino.game')) ? store.get('casino.game') : 'craps';
 let lobbyWheel = store.get('casino.wheel') === 'american' ? 'american' : 'european';
 function paintLobby() {
-  for (const b of document.querySelectorAll('#gameSeg button')) b.classList.toggle('on', b.dataset.game === lobbyGame);
+  for (const b of document.querySelectorAll('#gameSeg button, #gameSeg2 button')) b.classList.toggle('on', b.dataset.game === lobbyGame);
   for (const b of document.querySelectorAll('#wheelSeg button')) b.classList.toggle('on', b.dataset.wheel === lobbyWheel);
   $('#wheelPick').hidden = lobbyGame !== 'roulette';
 }
-$('#gameSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; lobbyGame = b.dataset.game; store.set('casino.game', lobbyGame); paintLobby(); });
+for (const seg of ['#gameSeg', '#gameSeg2']) $(seg).addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; lobbyGame = b.dataset.game; store.set('casino.game', lobbyGame); paintLobby(); });
 $('#wheelSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; lobbyWheel = b.dataset.wheel; store.set('casino.wheel', lobbyWheel); paintLobby(); });
 paintLobby();
 

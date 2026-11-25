@@ -62,7 +62,7 @@ const Fair = (() => {
     const ok = r.hashOk && r.seedsOk && r.bad.length === 0 && r.sawHash !== false;
     const lines = [
       r.hashOk ? 'The revealed seed matches the commitment.' : 'FAILED: the revealed seed does not match the commitment.',
-      r.sawHash === true ? 'It is the same commitment this device was shown before the rolls.' : r.sawHash === false ? 'FAILED: this device was shown a different commitment before the rolls.' : 'This device joined after that seed was committed, so it did not see the commitment first.',
+      r.sawHash === true ? 'It is the same commitment this device was shown before any result.' : r.sawHash === false ? 'FAILED: this device was shown a different commitment before any result.' : 'This device joined after that seed was committed, so it did not see the commitment first.',
       r.bad.length ? `FAILED: ${r.bad.length} of ${r.checked} results do not recompute (number ${r.bad.slice(0, 5).join(', ')}).` : r.checked === 1 ? 'The 1 result recomputes exactly from the seed.' : `All ${r.checked} results recompute exactly from the seed.`,
       r.seedsOk ? `Your seed was mixed into ${r.withMine} of ${r.checked}.` : 'FAILED: the player seeds do not match their hash.',
     ];
@@ -74,7 +74,7 @@ const Fair = (() => {
 
   /** The sheet body. `rerender` redraws the sheet after an async step. */
   function sheet(state, myId, send, rerender) {
-    const f = state.fair, unit = state.game === 'roulette' ? 'spin' : 'roll';
+    const f = state.fair, unit = ({ roulette: 'spin', blackjack: 'hand', baccarat: 'coup' })[state.game] || 'roll';
     const g = h('div', { class: 'guide' });
     if (!f) { g.append(h('p', null, 'This table is not using verifiable dice.')); return g; }
     const mineIn = f.seeded.includes(myId);
@@ -89,7 +89,7 @@ const Fair = (() => {
       h('button', { class: 'btn ghost', type: 'button', disabled: !f.rolls, style: 'margin-top:6px;opacity:' + (f.rolls ? 1 : 0.5),
         on: { click: () => send({ t: 'reveal' }) } }, f.rolls ? 'Reveal this seed and start a new one' : `Reveal opens after the first ${unit}`),
       h('h3', null, 'Revealed seeds'));
-    if (!f.past.length) g.append(h('p', null, state.game === 'roulette' ? 'None yet. A seed is retired every 10 spins.' : 'None yet. A seed is retired at the end of each shooter\'s hand.'));
+    if (!f.past.length) g.append(h('p', null, state.game === 'roulette' ? 'None yet. A seed is retired every 10 spins.' : state.game === 'blackjack' ? 'None yet. A seed is retired every 8 hands.' : state.game === 'baccarat' ? 'None yet. A seed is retired every 10 coups.' : 'None yet. A seed is retired at the end of each shooter\'s hand.'));
     for (const e of f.past) {
       const key = state.code + ':' + e.id;
       g.append(h('div', { style: 'border-top:1px solid #20362d;padding:10px 0' },

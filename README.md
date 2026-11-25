@@ -23,6 +23,9 @@ Open the page, pick a game, open a table, and share the invite link or 4-letter 
 - `src/server.js` - HTTP + WebSocket transport (SSE + POST fallback), table codes, reconnects.
 - `public/index.html` - lobby and craps client. `public/roll3d.js` - 3D dice scene (three.js).
 - `public/roulette.html|js` - roulette client and wheel animation.
+- `shared/cards.js`, `blackjack.js`, `baccarat.js` - shoe and card-game rules. `src/card-table.js`,
+  `blackjack-table.js`, `baccarat-table.js` - the tables. `public/cards.html`, `cardgame.js`,
+  `blackjack.js`, `baccarat.js` - the card-table client and dealing animation.
 - `public/lab.html|js` - Strategy Lab: strategy builder, charts, statistics.
 - `src/stats.js` - house telemetry store (two files in `DATA_DIR`, default `./data`; no player
   identity). `shared/theory.js` - exact per-round expectation and variance. `/house` shows it.
@@ -51,3 +54,11 @@ World, and all 21 Hop bets. Not included: Fire Bet / All-Tall-Small side bets, p
 
 Roulette: straight, split, street, trio, corner, first four / top line, six line, dozens, columns,
 red/black, even/odd, low/high. No la partage or en prison; no call (racetrack) bets.
+
+
+## Card games
+
+Blackjack: 6 decks shuffled every hand, dealer stands on all 17s, blackjack pays 3:2, double any two
+cards, double after split, split to 4 hands, split aces get one card, insurance 2:1, no surrender.
+Baccarat: 8-deck punto banco, Banker pays 0.95:1, Tie 8:1, pairs 11:1. Both deal from a provably
+fair shoe (`cards6` / `cards8` in `shared/fair.js`).

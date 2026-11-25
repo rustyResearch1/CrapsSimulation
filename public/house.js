@@ -102,7 +102,7 @@ function render() {
   }
   const z = zOf(all), sd = Math.sqrt(all.variance), width = el.clientWidth - 30;
   const tiles = h('div', { class: 'tiles' },
-    tile('Handle', usd(all.handle), `total of bets decided over ${num(all.rounds)} rolls and spins`),
+    tile('Handle', usd(all.handle), `total of bets decided over ${num(all.rounds)} rolls, spins and deals`),
     tile('House win', susd(all.hold), `the hold: what players lost, net`, all.hold >= 0 ? 'pos' : 'neg'),
     tile('Hold', pct(all.hold / all.handle, 2), `theory says ${pct(all.expected / all.handle, 2)} for this mix of bets`),
     tile('Expected win', susd(all.expected), `± ${usd(sd)} standard deviation`),
@@ -121,7 +121,7 @@ function render() {
     h('td', null, g.variance > 0 ? `${zOf(g) >= 0 ? '+' : '−'}${Math.abs(zOf(g)).toFixed(2)}` : '–'));
   const table = h('table', { class: 'st wide' }, head);
   for (const [name, g] of games) {
-    table.append(h('tr', { class: 'sec' }, h('td', { colspan: 7 }, `${name} · ${num(g.rounds)} ${name === 'craps' ? 'rolls' : 'spins'}`)));
+    table.append(h('tr', { class: 'sec' }, h('td', { colspan: 7 }, `${name} · ${num(g.rounds)} ${({ craps: 'rolls', roulette: 'spins', blackjack: 'rounds', baccarat: 'coups' })[name] || 'rounds'}`)));
     for (const [fam, f] of Object.entries(g.families).sort((a, b) => b[1].handle - a[1].handle)) table.append(row(fam, f, f.n));
     table.append(row(`All ${name}`, g, Object.values(g.families).reduce((s, f) => s + f.n, 0), true));
   }

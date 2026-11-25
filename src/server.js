@@ -13,6 +13,8 @@ import { randomInt, randomBytes } from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import { Table } from './table.js';
 import { RouletteTable } from './roulette-table.js';
+import { BlackjackTable } from './blackjack-table.js';
+import { BaccaratTable } from './baccarat-table.js';
 import { createStats } from './stats.js';
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -25,6 +27,8 @@ const STATIC = {
   '/': ['public/index.html', 'text/html; charset=utf-8', 'no-cache'],
   '/index.html': ['public/index.html', 'text/html; charset=utf-8', 'no-cache'],
   '/roulette': ['public/roulette.html', 'text/html; charset=utf-8', 'no-cache'],
+  '/blackjack': ['public/cards.html', 'text/html; charset=utf-8', 'no-cache'],
+  '/baccarat': ['public/cards.html', 'text/html; charset=utf-8', 'no-cache'],
   '/lab': ['public/lab.html', 'text/html; charset=utf-8', 'no-cache'],
   '/house': ['public/house.html', 'text/html; charset=utf-8', 'no-cache'],
   '/house.js': ['public/house.js', JS, 'no-cache'],
@@ -32,6 +36,13 @@ const STATIC = {
   '/lab.css': ['public/lab.css', 'text/css; charset=utf-8', 'no-cache'],
   '/shared/theory.js': ['shared/theory.js', JS, 'no-cache'],
   '/shared/fair.js': ['shared/fair.js', JS, 'no-cache'],
+  '/shared/cards.js': ['shared/cards.js', JS, 'no-cache'],
+  '/shared/blackjack.js': ['shared/blackjack.js', JS, 'no-cache'],
+  '/shared/baccarat.js': ['shared/baccarat.js', JS, 'no-cache'],
+  '/cardgame.js': ['public/cardgame.js', JS, 'no-cache'],
+  '/blackjack.js': ['public/blackjack.js', JS, 'no-cache'],
+  '/baccarat.js': ['public/baccarat.js', JS, 'no-cache'],
+  '/cards.css': ['public/cards.css', 'text/css; charset=utf-8', 'no-cache'],
   '/fair-ui.js': ['public/fair-ui.js', JS, 'no-cache'],
   '/roll3d.js': ['public/roll3d.js', JS, 'no-cache'],
   '/common.js': ['public/common.js', JS, 'no-cache'],
@@ -149,7 +160,11 @@ function handle(conn, msg) {
   if (msg.t === 'create') {
     if (conn.table) return;
     if (tables.size >= MAX_TABLES) return send(conn, { t: 'error', msg: 'Server is full - try again later' });
-    const table = msg.game === 'roulette' ? new RouletteTable(newCode(), { wheel: msg.wheel, stats }) : new Table(newCode(), { stats });
+    const code = newCode();
+    const table = msg.game === 'roulette' ? new RouletteTable(code, { wheel: msg.wheel, stats })
+      : msg.game === 'blackjack' ? new BlackjackTable(code, { stats })
+      : msg.game === 'baccarat' ? new BaccaratTable(code, { stats })
+      : new Table(code, { stats });
     stats.tableOpened(table.game);
     tables.set(table.code, table);
     return seat(conn, table, table.addPlayer(msg.name).player);

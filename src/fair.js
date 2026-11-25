@@ -4,13 +4,14 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { combine, message, outcomeFromBytes, SEED_RE } from '../shared/fair.js';
 import { WHEELS } from '../shared/roulette.js';
+import { cardsFromBytes } from '../shared/cards.js';
 
 const KEEP_EPOCHS = 20;
 export const sha256hex = (text) => createHash('sha256').update(text).digest('hex');
 export const hmac = (key, text) => new Uint8Array(createHmac('sha256', key).update(text).digest());
 
 export class Fair {
-  /** kind: 'craps' | 'european' | 'american' */
+  /** kind: 'craps' | 'european' | 'american' | 'cards6' | 'cards8' (a shoe of that many decks, reshuffled every round) */
   constructor(kind) {
     this.kind = kind;
     this.past = [];
@@ -50,9 +51,36 @@ export class Fair {
     return this.kind === 'craps' ? out.split('-').map(Number) : out;
   }
 
+  /**
+   * Card games: open a round and deal from it. Returns { next() -> card, close() }.
+   * Each round is a freshly shuffled shoe; the cards dealt are appended to the roll log as they come out.
+   */
+  openRound() {
+    const seeds = [...this.seeds.values()].sort(), cs = sha256hex(combine(seeds)), seed = this.serverSeed;
+    this.combos[cs] = seeds;
+    const decks = Number(this.kind.slice(5)), roll = { n: this.rolls.length + 1, cs, out: '', open: true };
+    this.rolls.push(roll);
+    const blocks = [];
+    let dealt = 0;
+    return {
+      next() {
+        for (;;) {
+          const bytes = new Uint8Array(blocks.length * 32);
+          blocks.forEach((b, i) => bytes.set(b, i * 32));
+          const cards = cardsFromBytes(bytes, decks, dealt + 1);
+          if (cards.length > dealt) { roll.out += cards[dealt]; return cards[dealt++]; }
+          blocks.push(hmac(seed, message(cs, roll.n, blocks.length)));
+        }
+      },
+      close() { delete roll.open; },
+    };
+  }
+  get roundOpen() { return this.rolls.some((r) => r.open); }
+
   /** Reveal the current seed and commit to a new one. */
   rotate() {
     if (!this.rolls.length) return 'No rolls on this seed yet';
+    if (this.roundOpen) return 'The seed can be revealed between rounds';
     this.past.unshift({ id: this.id, kind: this.kind, hash: this.hash, serverSeed: this.serverSeed, rolls: this.rolls, combos: this.combos });
     if (this.past.length > KEEP_EPOCHS) this.past.length = KEEP_EPOCHS;
     this.commit();
@@ -69,7 +97,8 @@ export class Fair {
 
   /** Full roll log for one epoch. The seed is included only once it has been retired. */
   epochData(id) {
-    if (id === this.id) return { id: this.id, kind: this.kind, hash: this.hash, serverSeed: null, rolls: this.rolls, combos: this.combos };
+    // A round still being played keeps its cards hidden: the log would give away the dealer's hole card.
+    if (id === this.id) return { id: this.id, kind: this.kind, hash: this.hash, serverSeed: null, rolls: this.rolls.filter((r) => !r.open), combos: this.combos };
     return this.past.find((e) => e.id === id) || null;
   }
 }

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0a1411">
+<title>Card Table</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/base.css">
+<link rel="stylesheet" href="/cards.css">
+</head>
+<body>
+<div id="game">
+  <header><div class="wrap">
+    <div class="hbar">
+      <div class="code"><small id="gameName">Table</small><span id="code"></span></div>
+      <span class="dot off" id="conn" title="connection"></span>
+      <span class="sp"></span>
+      <button class="hbtn" id="share">Invite</button>
+      <button class="hbtn" id="guideBtn">Guide</button>
+      <button class="hbtn" id="menuBtn">Menu</button>
+    </div>
+    <div id="status">
+      <div id="phase"></div>
+      <div id="call"></div>
+      <div id="mine"></div>
+    </div>
+  </div></header>
+  <div class="wrap">
+    <div id="players"></div>
+    <main id="felt"></main>
+    <section id="hand"></section>
+  </div>
+  <footer id="dock"><div class="wrap">
+    <div class="stats">
+      <span>Chips <b id="bank">$0</b></span>
+      <span>On table <b id="onTable">$0</b></span>
+      <span>Session <b id="net">$0</b></span>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="acts" id="acts"></div>
+  </div></footer>
+</div>
+<div id="scrim" hidden></div>
+<div id="sheet" hidden></div>
+<div id="toast"></div>
+<script src="/common.js"></script>
+<script src="/fair-ui.js"></script>
+<script type="module">import(location.pathname.includes('baccarat') ? '/baccarat.js' : '/blackjack.js');</script>
+</body>
+</html>

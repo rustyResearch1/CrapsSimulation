@@ -66,7 +66,7 @@ export function createStats(dir) {
       const g = totals.games[game] || (totals.games[game] = { rounds: 0, decided: 0, handle: 0, hold: 0, expected: 0, variance: 0, families: {} });
       g.rounds++;
       if (game === 'craps') { totals.dice.totals[outcome.d1 + outcome.d2]++; totals.dice.faces[outcome.d1]++; totals.dice.faces[outcome.d2]++; }
-      else { const w = totals.pockets[outcome.wheel]; w[outcome.pocket] = (w[outcome.pocket] || 0) + 1; }
+      else if (game === 'roulette') { const w = totals.pockets[outcome.wheel]; w[outcome.pocket] = (w[outcome.pocket] || 0) + 1; }
       if (res && (res.handle > 0 || res.variance > 0)) {
         g.decided++; add(g, res);
         for (const [name, f] of Object.entries(res.families)) {

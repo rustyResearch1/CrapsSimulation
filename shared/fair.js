@@ -7,10 +7,14 @@
 //   3. Roll number `nonce` is drawn from
 //        HMAC-SHA256(key = serverSeed, message = "clientHash:nonce:0") followed by "...:nonce:1"
 //      and turned into dice or a pocket by the functions below.
+//      Card games deal each round from a freshly shuffled shoe: blocks ":0", ":1", ":2"... are read
+//      four bytes at a time to pick each card from those remaining (see cards.js).
 //   4. When the seed is retired the server reveals it. Anyone can check that it hashes to the
 //      commitment and recompute every roll.
 // The server cannot change its seed after committing, and cannot have chosen it to suit seeds
 // it had not yet seen. Hashes and seeds are plain text (hex), so any tool can reproduce them.
+
+import { cardsFromBytes } from './cards.js';
 
 /** Canonical form of the players' seeds before hashing. */
 export const combine = (seeds) => [...seeds].sort().join('|');
@@ -57,11 +61,21 @@ export async function verifyEpoch(epoch, crypto, wheels) {
     if ((await crypto.sha256hex(combine(seeds))) !== cs) seedsOk = false;
   }
   const bad = [];
+  const cat = (parts) => { const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0)); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; } return out; };
   for (const r of epoch.rolls) {
     if (!epoch.combos[r.cs]) { bad.push(r.n); continue; }
-    const a = await crypto.hmac(epoch.serverSeed, message(r.cs, r.n, 0)), b = await crypto.hmac(epoch.serverSeed, message(r.cs, r.n, 1));
-    const bytes = new Uint8Array(a.length + b.length); bytes.set(a); bytes.set(b, a.length);
-    if (outcomeFromBytes(epoch.kind, bytes, wheels) !== r.out) bad.push(r.n);
+    const blocks = [];
+    const more = async () => blocks.push(await crypto.hmac(epoch.serverSeed, message(r.cs, r.n, blocks.length)));
+    if (epoch.kind.startsWith('cards')) {
+      // the roll log holds the cards dealt that round, two characters each
+      const decks = Number(epoch.kind.slice(5)), want = r.out.length / 2;
+      let cards = [];
+      while (cards.length < want && blocks.length < 400) { await more(); cards = cardsFromBytes(cat(blocks), decks, want); }
+      if (cards.join('') !== r.out) bad.push(r.n);
+    } else {
+      await more(); await more();
+      if (outcomeFromBytes(epoch.kind, cat(blocks), wheels) !== r.out) bad.push(r.n);
+    }
   }
   return { hashOk, seedsOk, checked: epoch.rolls.length, bad };
 }
